@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { supabase } from "@/lib/supabase";
@@ -188,6 +189,14 @@ export default function RegisterScreen() {
                   size="lg"
                 />
               </View>
+
+              <View className="flex-row items-center gap-3 py-2">
+                <View className="flex-1 h-px bg-slate-700" />
+                <Text className="text-slate-500 text-sm">or</Text>
+                <View className="flex-1 h-px bg-slate-700" />
+              </View>
+
+              <GoogleSignInButton />
             </View>
 
             <View className="flex-row items-center justify-center gap-1">
