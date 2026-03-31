@@ -184,7 +184,7 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
                       className={`
                         w-10 h-10 rounded-full items-center justify-center
                         ${c.className}
-                        ${value === c.value ? "ring-2 ring-white ring-offset-2 ring-offset-slate-900" : ""}
+                        ${value === c.value ? "border-2 border-white" : "border-2 border-transparent"}
                       `}
                     >
                       {value === c.value && (

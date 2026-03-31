@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
+import { useAuthStore } from "@/stores/auth.store";
 
 const TAB_BAR_STYLE = {
   backgroundColor: "#0f172a",
@@ -11,6 +12,12 @@ const TAB_BAR_STYLE = {
 };
 
 export default function TabLayout() {
+  const user = useAuthStore((state) => state.user);
+
+  if (!user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

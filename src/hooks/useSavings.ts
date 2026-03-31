@@ -1,75 +1,41 @@
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { useAuthStore } from "../stores/auth.store";
+import { useEffect, useMemo } from "react";
+import { useSavingsStore } from "../stores/savings.store";
+import { useTransactionsStore } from "../stores/transactions.store";
 import type { AddSavingInput, Saving } from "../types";
 
 export function useSavings(transactionId?: string) {
-  const [savings, setSavings] = useState<Saving[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuthStore();
+  const {
+    savings: allSavings,
+    loading,
+    error,
+    fetchSavings,
+    addSaving: storeAddSaving,
+    deleteSaving: storeDeleteSaving,
+  } = useSavingsStore();
 
-  const fetchSavings = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-
-    let query = supabase
-      .from("savings")
-      .select(
-        `
-        *,
-        transaction:transactions(description, amount)
-      `
-      )
-      .eq("user_id", user.id)
-      .order("saved_date", { ascending: false });
-
-    if (transactionId) {
-      query = query.eq("transaction_id", transactionId);
-    }
-
-    const { data, error: fetchError } = await query;
-
-    if (fetchError) {
-      setError(fetchError.message);
-    } else {
-      setSavings((data as Saving[]) ?? []);
-    }
-    setLoading(false);
-  }, [user, transactionId]);
+  const { fetchTransactions } = useTransactionsStore();
 
   useEffect(() => {
     fetchSavings();
   }, [fetchSavings]);
 
+  const savings = useMemo(
+    () =>
+      transactionId
+        ? allSavings.filter((s) => s.transaction_id === transactionId)
+        : allSavings,
+    [allSavings, transactionId]
+  );
+
   const addSaving = async (input: AddSavingInput): Promise<Saving> => {
-    if (!user) throw new Error("Not authenticated");
-
-    const { data, error: insertError } = await supabase
-      .from("savings")
-      .insert({ ...input, user_id: user.id })
-      .select(
-        `
-        *,
-        transaction:transactions(description, amount)
-      `
-      )
-      .single();
-
-    if (insertError) throw insertError;
-    setSavings((prev) => [data as Saving, ...prev]);
-    return data as Saving;
+    const result = await storeAddSaving(input);
+    await fetchTransactions();
+    return result;
   };
 
   const deleteSaving = async (id: string): Promise<void> => {
-    const { error: deleteError } = await supabase
-      .from("savings")
-      .delete()
-      .eq("id", id);
-
-    if (deleteError) throw deleteError;
-    setSavings((prev) => prev.filter((s) => s.id !== id));
+    await storeDeleteSaving(id);
+    await fetchTransactions();
   };
 
   const totalSaved = savings.reduce((sum, s) => sum + s.amount, 0);

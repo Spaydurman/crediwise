@@ -2,11 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
   Animated,
+  BackHandler,
   Dimensions,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -30,9 +31,11 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const slideAnim = useRef(new Animated.Value(snapHeight)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
+  const mounted = useRef(false);
 
   useEffect(() => {
     if (visible) {
+      mounted.current = true;
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
@@ -46,7 +49,7 @@ export function BottomSheet({
           useNativeDriver: true,
         }),
       ]).start();
-    } else {
+    } else if (mounted.current) {
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: snapHeight,
@@ -62,22 +65,27 @@ export function BottomSheet({
     }
   }, [visible, slideAnim, backdropAnim, snapHeight]);
 
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, onClose]);
+
+  if (!visible) return null;
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
+    <View style={StyleSheet.absoluteFill} className="z-50">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
         <View className="flex-1 justify-end">
           <Animated.View
-            className="absolute inset-0 bg-black/70"
-            style={{ opacity: backdropAnim }}
+            style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}
+            className="bg-black/70"
           >
             <Pressable className="flex-1" onPress={onClose} />
           </Animated.View>
@@ -102,6 +110,6 @@ export function BottomSheet({
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </View>
   );
 }

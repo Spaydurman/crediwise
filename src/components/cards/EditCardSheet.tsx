@@ -176,7 +176,7 @@ export function EditCardSheet({
                       className={`
                         w-10 h-10 rounded-full items-center justify-center
                         ${c.className}
-                        ${value === c.value ? "ring-2 ring-white" : ""}
+                        ${value === c.value ? "border-2 border-white" : "border-2 border-transparent"}
                       `}
                     >
                       {value === c.value && (

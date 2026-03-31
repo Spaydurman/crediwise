@@ -67,9 +67,9 @@ function SavingHistoryItem({
 }
 
 export default function SavingsScreen() {
-  const { savings, loading, totalSaved, deleteSaving, addSaving, refetch } =
+  const { savings, loading, totalSaved, deleteSaving, addSaving } =
     useSavings();
-  const { transactions, refetch: refetchTransactions } = useTransactions();
+  const { transactions } = useTransactions();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
@@ -82,8 +82,6 @@ export default function SavingsScreen() {
 
   const handleAddSaving = async (data: AddSavingInput) => {
     await addSaving(data);
-    await refetch();
-    refetchTransactions();
   };
 
   const handleDelete = async () => {
@@ -91,8 +89,6 @@ export default function SavingsScreen() {
     try {
       setDeleting(true);
       await deleteSaving(deleteTarget.id);
-      await refetch();
-      refetchTransactions();
       setDeleteTarget(null);
     } catch {
       // error handled in hook

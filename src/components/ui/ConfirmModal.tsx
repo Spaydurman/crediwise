@@ -1,4 +1,5 @@
-import { Modal, Pressable, Text, View } from "react-native";
+import { useEffect } from "react";
+import { BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "./Button";
 
 interface ConfirmModalProps {
@@ -20,16 +21,27 @@ export function ConfirmModal({
   onCancel,
   loading = false,
 }: ConfirmModalProps) {
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onCancel();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, onCancel]);
+
+  if (!visible) return null;
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-      statusBarTranslucent
-    >
-      <View className="flex-1 bg-black/70 items-center justify-center px-6">
-        <View className="bg-slate-900 rounded-2xl p-6 w-full gap-4 border border-slate-800">
+    <View style={StyleSheet.absoluteFill} className="z-50">
+      <Pressable
+        onPress={onCancel}
+        className="flex-1 bg-black/70 items-center justify-center px-6"
+      >
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          className="bg-slate-900 rounded-2xl p-6 w-full gap-4 border border-slate-800"
+        >
           <View className="gap-2">
             <Text className="text-white text-lg font-bold">{title}</Text>
             <Text className="text-slate-400 text-sm leading-5">{message}</Text>
@@ -53,8 +65,8 @@ export function ConfirmModal({
               />
             </View>
           </View>
-        </View>
-      </View>
-    </Modal>
+        </Pressable>
+      </Pressable>
+    </View>
   );
 }

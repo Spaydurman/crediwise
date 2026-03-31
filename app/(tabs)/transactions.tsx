@@ -29,9 +29,8 @@ export default function TransactionsScreen() {
     totalRemaining,
     addTransaction,
     deleteTransaction,
-    refetch,
   } = useTransactions();
-  const { addSaving, refetch: refetchSavings } = useSavings();
+  const { addSaving } = useSavings();
 
   const [selectedCardFilter, setSelectedCardFilter] = useState<string | null>(null);
   const [showAddTxn, setShowAddTxn] = useState(false);
@@ -45,8 +44,6 @@ export default function TransactionsScreen() {
 
   const handleAddSaving = async (data: AddSavingInput) => {
     await addSaving(data);
-    await refetch();
-    refetchSavings();
   };
 
   const handleDelete = async () => {
