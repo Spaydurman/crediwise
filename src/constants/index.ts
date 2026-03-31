@@ -46,6 +46,8 @@ export const TRANSACTION_CATEGORIES = [
   "Others",
 ] as const;
 
+export const INSTALLMENT_TERMS = [3, 6, 9, 12, 18, 24, 36] as const;
+
 export const CURRENCY = "₱";
 
 export const DATE_FORMAT = "MMM dd, yyyy";

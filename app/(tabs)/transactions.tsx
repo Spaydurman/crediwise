@@ -29,6 +29,7 @@ export default function TransactionsScreen() {
     totalRemaining,
     addTransaction,
     deleteTransaction,
+    togglePaid,
   } = useTransactions();
   const { addSaving } = useSavings();
 
@@ -164,6 +165,7 @@ export default function TransactionsScreen() {
                 transaction={item}
                 onPress={() => setSavingTarget(item)}
                 onDelete={() => setDeleteTarget(item)}
+                onTogglePaid={() => togglePaid(item.id, !item.is_paid)}
               />
             )}
           />

@@ -29,6 +29,10 @@ export interface Transaction {
   amount: number;
   category: string;
   transaction_date: string;
+  is_installment: boolean;
+  installment_months: number | null;
+  monthly_amount: number | null;
+  is_paid: boolean;
   created_at: string;
   updated_at: string;
   credit_card?: Pick<CreditCard, "name" | "bank" | "color" | "last_four_digits">;
@@ -80,6 +84,9 @@ export interface AddTransactionInput {
   amount: number;
   category: string;
   transaction_date: string;
+  is_installment: boolean;
+  installment_months: number | null;
+  monthly_amount: number | null;
 }
 
 export interface AddSavingInput {

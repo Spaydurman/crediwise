@@ -29,7 +29,14 @@ export function AddSavingSheet({
   const [submitting, setSubmitting] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-  const remaining = transaction?.remaining ?? transaction?.amount ?? 0;
+  const trackableAmount =
+    transaction?.is_installment && transaction?.monthly_amount
+      ? transaction.monthly_amount
+      : transaction?.amount ?? 0;
+  const remaining = Math.max(
+    0,
+    trackableAmount - (transaction?.total_saved ?? 0)
+  );
 
   const {
     control,
@@ -97,12 +104,25 @@ export function AddSavingSheet({
               >
                 {transaction.description}
               </Text>
+              {transaction.is_installment && transaction.monthly_amount && (
+                <View className="bg-indigo-950/50 border border-indigo-800/50 rounded-lg px-3 py-2">
+                  <Text className="text-indigo-300 text-xs">
+                    Installment: {transaction.installment_months} months — {CURRENCY}
+                    {transaction.monthly_amount.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
+                    /mo
+                  </Text>
+                </View>
+              )}
               <View className="flex-row justify-between">
                 <View>
-                  <Text className="text-slate-500 text-xs">Total Amount</Text>
+                  <Text className="text-slate-500 text-xs">
+                    {transaction.is_installment ? "Monthly Due" : "Total Amount"}
+                  </Text>
                   <Text className="text-white text-sm font-bold">
                     {CURRENCY}
-                    {transaction.amount.toLocaleString("en-PH", {
+                    {trackableAmount.toLocaleString("en-PH", {
                       minimumFractionDigits: 2,
                     })}
                   </Text>

@@ -9,6 +9,7 @@ interface TransactionItemProps {
   transaction: Transaction;
   onPress?: () => void;
   onDelete?: () => void;
+  onTogglePaid?: () => void;
 }
 
 function getSavingsVariant(
@@ -35,6 +36,7 @@ export function TransactionItem({
   transaction,
   onPress,
   onDelete,
+  onTogglePaid,
 }: TransactionItemProps) {
   const totalSaved = transaction.total_saved ?? 0;
   const remaining = transaction.remaining ?? transaction.amount;
@@ -45,9 +47,14 @@ export function TransactionItem({
   const savingsVariant = getSavingsVariant(isFullySaved, remaining, totalSaved);
   const savingsLabel = getSavingsLabel(isFullySaved, remaining, totalSaved);
 
+  const trackableAmount =
+    transaction.is_installment && transaction.monthly_amount
+      ? transaction.monthly_amount
+      : transaction.amount;
+
   const progressPercent =
-    transaction.amount > 0
-      ? Math.min((totalSaved / transaction.amount) * 100, 100)
+    trackableAmount > 0
+      ? Math.min((totalSaved / trackableAmount) * 100, 100)
       : 0;
 
   return (
@@ -79,7 +86,17 @@ export function TransactionItem({
               minimumFractionDigits: 2,
             })}
           </Text>
-          <Badge label={savingsLabel} variant={savingsVariant} />
+          {transaction.is_installment && transaction.monthly_amount && (
+            <Badge
+              label={`${CURRENCY}${transaction.monthly_amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}/mo × ${transaction.installment_months}`}
+              variant="info"
+            />
+          )}
+          {transaction.is_paid ? (
+            <Badge label="Paid ✓" variant="success" />
+          ) : (
+            <Badge label={savingsLabel} variant={savingsVariant} />
+          )}
         </View>
       </View>
 
@@ -107,7 +124,22 @@ export function TransactionItem({
       </View>
 
       {onDelete && (
-        <View className="flex-row justify-end border-t border-slate-800 pt-2">
+        <View className="flex-row justify-end gap-3 border-t border-slate-800 pt-2">
+          {onTogglePaid && (
+            <Pressable
+              onPress={onTogglePaid}
+              className="flex-row items-center gap-1 px-3 py-1 rounded-lg active:bg-indigo-900/30"
+            >
+              <Ionicons
+                name={transaction.is_paid ? "close-circle-outline" : "checkmark-circle-outline"}
+                size={14}
+                color={transaction.is_paid ? "#f59e0b" : "#6366f1"}
+              />
+              <Text className={`text-xs font-medium ${transaction.is_paid ? "text-amber-400" : "text-indigo-400"}`}>
+                {transaction.is_paid ? "Unpaid" : "Mark Paid"}
+              </Text>
+            </Pressable>
+          )}
           <Pressable
             onPress={onDelete}
             className="flex-row items-center gap-1 px-3 py-1 rounded-lg active:bg-red-900/30"

@@ -4,14 +4,16 @@ import {
   Alert,
   Pressable,
   ScrollView,
+  Switch,
   Text,
   View,
 } from "react-native";
-import { TRANSACTION_CATEGORIES } from "../../constants";
+import { INSTALLMENT_TERMS, TRANSACTION_CATEGORIES } from "../../constants";
 import type { AddTransactionInput, CreditCard } from "../../types";
 import { BottomSheet } from "../ui/BottomSheet";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { CURRENCY } from "../../constants";
 
 interface AddTransactionSheetProps {
   visible: boolean;
@@ -27,6 +29,8 @@ interface TransactionFormValues {
   amount: string;
   category: string;
   transaction_date: string;
+  is_installment: boolean;
+  installment_months: number;
 }
 
 export function AddTransactionSheet({
@@ -54,11 +58,22 @@ export function AddTransactionSheet({
       amount: "",
       category: TRANSACTION_CATEGORIES[0],
       transaction_date: today,
+      is_installment: false,
+      installment_months: 6,
     },
   });
 
   const selectedCardId = watch("card_id");
   const selectedCategory = watch("category");
+  const isInstallment = watch("is_installment");
+  const installmentMonths = watch("installment_months");
+  const amountStr = watch("amount");
+
+  const parsedAmount = parseFloat(amountStr) || 0;
+  const monthlyAmount =
+    isInstallment && installmentMonths > 0
+      ? parsedAmount / installmentMonths
+      : null;
 
   const onSubmit = async (values: TransactionFormValues) => {
     try {
@@ -69,6 +84,11 @@ export function AddTransactionSheet({
         amount: parseFloat(values.amount),
         category: values.category,
         transaction_date: values.transaction_date,
+        is_installment: values.is_installment,
+        installment_months: values.is_installment ? values.installment_months : null,
+        monthly_amount: values.is_installment && values.installment_months > 0
+          ? Math.round((parseFloat(values.amount) / values.installment_months) * 100) / 100
+          : null,
       });
       reset({
         card_id: defaultCardId ?? cards[0]?.id ?? "",
@@ -76,6 +96,8 @@ export function AddTransactionSheet({
         amount: "",
         category: TRANSACTION_CATEGORIES[0],
         transaction_date: today,
+        is_installment: false,
+        installment_months: 6,
       });
       onClose();
     } catch {
@@ -90,7 +112,7 @@ export function AddTransactionSheet({
       visible={visible}
       onClose={onClose}
       title="Add Transaction"
-      snapHeight={680}
+      snapHeight={750}
     >
       <ScrollView
         className="px-5 py-4"
@@ -208,6 +230,98 @@ export function AddTransactionSheet({
               ))}
             </View>
           </View>
+
+          {/* Installment Toggle */}
+          <View className="flex-row items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
+            <View className="flex-1 gap-0.5">
+              <Text className="text-slate-300 text-sm font-medium">
+                Installment / Pay Later
+              </Text>
+              <Text className="text-slate-500 text-xs">
+                Split into monthly payments
+              </Text>
+            </View>
+            <Controller
+              control={control}
+              name="is_installment"
+              render={({ field: { onChange, value } }) => (
+                <Switch
+                  value={value}
+                  onValueChange={onChange}
+                  trackColor={{ false: "#334155", true: "#6366f1" }}
+                  thumbColor={value ? "#e0e7ff" : "#94a3b8"}
+                />
+              )}
+            />
+          </View>
+
+          {/* Installment Term Picker */}
+          {isInstallment && (
+            <View className="gap-2">
+              <Text className="text-slate-300 text-sm font-medium">
+                Number of Months
+              </Text>
+              <Controller
+                control={control}
+                name="installment_months"
+                render={({ field: { onChange, value } }) => (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    className="-mx-1"
+                    contentContainerClassName="gap-2 px-1"
+                  >
+                    {INSTALLMENT_TERMS.map((term) => (
+                      <Pressable
+                        key={term}
+                        onPress={() => onChange(term)}
+                        className={`
+                          px-4 py-2.5 rounded-xl border min-w-[56px] items-center
+                          ${
+                            value === term
+                              ? "bg-indigo-600 border-indigo-500"
+                              : "bg-slate-800 border-slate-700"
+                          }
+                        `}
+                      >
+                        <Text
+                          className={`text-sm font-bold ${
+                            value === term ? "text-white" : "text-slate-300"
+                          }`}
+                        >
+                          {term}
+                        </Text>
+                        <Text
+                          className={`text-xs ${
+                            value === term ? "text-indigo-200" : "text-slate-500"
+                          }`}
+                        >
+                          mos
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                )}
+              />
+
+              {/* Monthly Amount Preview */}
+              {monthlyAmount !== null && parsedAmount > 0 && (
+                <View className="bg-indigo-950/50 border border-indigo-800/50 rounded-xl p-3 flex-row items-center justify-between">
+                  <Text className="text-indigo-300 text-sm">
+                    Monthly Payment
+                  </Text>
+                  <Text className="text-indigo-400 text-base font-bold">
+                    {CURRENCY}
+                    {monthlyAmount.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                    /mo
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           <Controller
             control={control}
