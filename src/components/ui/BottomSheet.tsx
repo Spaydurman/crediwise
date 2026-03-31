@@ -79,8 +79,9 @@ export function BottomSheet({
   return (
     <View style={StyleSheet.absoluteFill} className="z-50">
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <View className="flex-1 justify-end">
           <Animated.View
