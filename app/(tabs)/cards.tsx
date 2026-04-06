@@ -93,7 +93,7 @@ export default function CardsScreen() {
 
                   <View className="flex-row gap-3">
                     <View className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 gap-0.5">
-                      <Text className="text-slate-500 text-xs">Natabi</Text>
+                      <Text className="text-slate-500 text-xs">Saved</Text>
                       <Text className="text-emerald-400 text-sm font-bold">
                         {CURRENCY}
                         {saved.toLocaleString("en-PH", {
@@ -102,7 +102,7 @@ export default function CardsScreen() {
                       </Text>
                     </View>
                     <View className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 gap-0.5">
-                      <Text className="text-slate-500 text-xs">Kulang</Text>
+                      <Text className="text-slate-500 text-xs">Shortage</Text>
                       <Text className="text-amber-400 text-sm font-bold">
                         {CURRENCY}
                         {remaining.toLocaleString("en-PH", {

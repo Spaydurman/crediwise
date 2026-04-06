@@ -106,7 +106,7 @@ export default function SavingsScreen() {
     <SafeAreaView className="flex-1 bg-slate-950">
       <View className="flex-1">
         <View className="px-5 pt-4 pb-3">
-          <Text className="text-white text-2xl font-bold">Natabi Tracker</Text>
+          <Text className="text-white text-2xl font-bold">Savings Tracker</Text>
           <Text className="text-slate-400 text-sm mt-0.5">
             Track money you've set aside for each transaction
           </Text>
@@ -122,7 +122,7 @@ export default function SavingsScreen() {
                 {fullyPaidTransactions.length}
               </Text>
               <Text className="text-slate-500 text-xs text-center">
-                Fully Natabi
+                Fully Saved
               </Text>
             </View>
             <View className="w-px bg-slate-800" />
@@ -198,7 +198,7 @@ export default function SavingsScreen() {
                   <View className="flex-row items-center justify-center gap-1 mt-1">
                     <Ionicons name="add-circle-outline" size={14} color="#6366f1" />
                     <Text className="text-indigo-400 text-xs font-semibold">
-                      Natabi
+                      Save
                     </Text>
                   </View>
                 </Pressable>

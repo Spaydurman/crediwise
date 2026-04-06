@@ -58,7 +58,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="savings"
         options={{
-          title: "Natabi",
+          title: "Saved",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="wallet" size={size} color={color} />
           ),

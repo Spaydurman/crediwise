@@ -76,11 +76,11 @@ function CardSummaryItem({ card, spending, saved, remaining }: {
         </View>
         <View className="flex-row justify-between">
           <Text className="text-emerald-400 text-xs">
-            Natabi: {CURRENCY}
+            Saved: {CURRENCY}
             {saved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
           </Text>
           <Text className="text-amber-400 text-xs">
-            Kulang: {CURRENCY}
+            Shortage: {CURRENCY}
             {remaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
           </Text>
         </View>
@@ -143,13 +143,13 @@ export default function DashboardScreen() {
             <View className="h-px bg-slate-800" />
             <View className="flex-row gap-3">
               <StatCard
-                label="Natabi Na"
+                label="Total Saved"
                 value={`${CURRENCY}${totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`}
                 accent="text-emerald-400"
                 subtitle={`${fullyPaidCount} transactions`}
               />
               <StatCard
-                label="Kulang Pa"
+                label="Still Short"
                 value={`${CURRENCY}${totalRemaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`}
                 accent="text-amber-400"
                 subtitle={`${pendingCount} transactions`}
@@ -249,10 +249,10 @@ export default function DashboardScreen() {
                     }`}
                   >
                     {txn.is_fully_saved
-                      ? "Natabi na ✓"
+                      ? "Saved ✓"
                       : txn.total_saved! > 0
                       ? "Partial"
-                      : "Hindi pa"}
+                      : "Not yet"}
                   </Text>
                 </View>
               </Pressable>

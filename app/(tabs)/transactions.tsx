@@ -85,7 +85,7 @@ export default function TransactionsScreen() {
             </View>
             <View className="w-px bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
-              <Text className="text-slate-500 text-xs">Natabi</Text>
+              <Text className="text-slate-500 text-xs">Saved</Text>
               <Text className="text-emerald-400 text-sm font-bold">
                 {CURRENCY}
                 {totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
@@ -93,7 +93,7 @@ export default function TransactionsScreen() {
             </View>
             <View className="w-px bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
-              <Text className="text-slate-500 text-xs">Kulang</Text>
+              <Text className="text-slate-500 text-xs">Shortage</Text>
               <Text className="text-amber-400 text-sm font-bold">
                 {CURRENCY}
                 {totalRemaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}

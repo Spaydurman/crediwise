@@ -27,9 +27,9 @@ function getSavingsLabel(
   remaining: number,
   totalSaved: number
 ): string {
-  if (isFullySaved) return "Natabi na ✓";
+  if (isFullySaved) return "Saved ✓";
   if (totalSaved > 0) return `${CURRENCY}${remaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })} pa`;
-  return "Hindi pa natabi";
+  return "Not yet saved";
 }
 
 export function TransactionItem({

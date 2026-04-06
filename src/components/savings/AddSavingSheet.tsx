@@ -86,7 +86,7 @@ export function AddSavingSheet({
     <BottomSheet
       visible={visible}
       onClose={onClose}
-      title="Record Saving (Natabi)"
+      title="Record Saving"
       snapHeight={520}
     >
       <ScrollView
@@ -160,7 +160,7 @@ export function AddSavingSheet({
             }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label={`Amount to Natabi (₱) — Max: ${CURRENCY}${remaining.toLocaleString(
+                label={`Amount to Save (₱) — Max: ${CURRENCY}${remaining.toLocaleString(
                   "en-PH",
                   { minimumFractionDigits: 2 }
                 )}`}
