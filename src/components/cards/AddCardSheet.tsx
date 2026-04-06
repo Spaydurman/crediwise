@@ -25,6 +25,7 @@ interface CardFormValues {
   bank: string;
   last_four_digits: string;
   credit_limit: string;
+  statement_date: string;
   billing_cycle_date: string;
   color: CardColor;
 }
@@ -43,6 +44,7 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
       bank: "",
       last_four_digits: "",
       credit_limit: "",
+      statement_date: "",
       billing_cycle_date: "1",
       color: "indigo",
     },
@@ -56,6 +58,7 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
         bank: values.bank.trim(),
         last_four_digits: values.last_four_digits.trim() || null,
         credit_limit: parseFloat(values.credit_limit) || 0,
+        statement_date: values.statement_date.trim() ? parseInt(values.statement_date, 10) : null,
         billing_cycle_date: parseInt(values.billing_cycle_date, 10) || 1,
         color: values.color,
       });
@@ -150,16 +153,36 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
 
           <Controller
             control={control}
+            name="statement_date"
+            rules={{
+              min: { value: 1, message: "Min is 1" },
+              max: { value: 28, message: "Max is 28" },
+            }}
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Statement Cut-off Day (1–28, optional)"
+                placeholder="e.g. 25"
+                value={value}
+                onChangeText={onChange}
+                keyboardType="numeric"
+                maxLength={2}
+                error={errors.statement_date?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
             name="billing_cycle_date"
             rules={{
-              required: "Billing day is required",
+              required: "Payment due day is required",
               min: { value: 1, message: "Min is 1" },
               max: { value: 31, message: "Max is 31" },
             }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Billing Cycle Day (1–31)"
-                placeholder="e.g. 15"
+                label="Payment Due Day (1–31)"
+                placeholder="e.g. 20"
                 value={value}
                 onChangeText={onChange}
                 keyboardType="numeric"

@@ -7,6 +7,7 @@ import { Badge } from "../ui/Badge";
 
 interface TransactionItemProps {
   transaction: Transaction;
+  isOverdue?: boolean;
   onPress?: () => void;
   onDelete?: () => void;
   onTogglePaid?: () => void;
@@ -34,6 +35,7 @@ function getSavingsLabel(
 
 export function TransactionItem({
   transaction,
+  isOverdue = false,
   onPress,
   onDelete,
   onTogglePaid,
@@ -60,7 +62,9 @@ export function TransactionItem({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-900 border border-slate-800 rounded-xl p-4 gap-3 active:bg-slate-800"
+      className={`bg-slate-900 border rounded-xl p-4 gap-3 active:bg-slate-800 ${
+        isOverdue ? "border-red-500" : "border-slate-800"
+      }`}
     >
       <View className="flex-row items-start gap-3">
         <View className={`${cardBgClass} w-10 h-10 rounded-xl items-center justify-center flex-shrink-0`}>

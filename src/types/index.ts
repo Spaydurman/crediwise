@@ -15,6 +15,7 @@ export interface CreditCard {
   bank: string;
   last_four_digits: string | null;
   credit_limit: number;
+  statement_date: number | null;
   billing_cycle_date: number;
   color: CardColor;
   created_at: string;
@@ -74,6 +75,7 @@ export interface AddCardInput {
   bank: string;
   last_four_digits: string | null;
   credit_limit: number;
+  statement_date: number | null;
   billing_cycle_date: number;
   color: CardColor;
 }
