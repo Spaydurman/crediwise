@@ -33,6 +33,7 @@ interface TransactionsState {
   addTransaction: (input: AddTransactionInput) => Promise<Transaction>;
   deleteTransaction: (id: string) => Promise<void>;
   togglePaid: (id: string, isPaid: boolean) => Promise<void>;
+  markAllPaid: (ids: string[]) => Promise<void>;
   reset: () => void;
 }
 
@@ -104,6 +105,22 @@ export const useTransactionsStore = create<TransactionsState>((set) => ({
     set((state) => ({
       transactions: state.transactions.map((t) =>
         t.id === id ? enriched : t
+      ),
+    }));
+  },
+
+  markAllPaid: async (ids) => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .update({ is_paid: true })
+      .in("id", ids)
+      .select(TRANSACTION_SELECT);
+
+    if (error) throw error;
+    const enriched = enrichTransactions((data as Transaction[]) ?? []);
+    set((state) => ({
+      transactions: state.transactions.map(
+        (t) => enriched.find((e) => e.id === t.id) ?? t
       ),
     }));
   },

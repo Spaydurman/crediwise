@@ -43,6 +43,7 @@ export default function TransactionsScreen() {
     addTransaction,
     deleteTransaction,
     togglePaid,
+    markAllPaid,
   } = useTransactions();
   const { addSaving } = useSavings();
 
@@ -66,24 +67,14 @@ export default function TransactionsScreen() {
     const cardMap = new Map(cards.map((c) => [c.id, c]));
     const groupMap = new Map<string, BillingGroup>();
 
-    for (const txn of filteredTransactions) {
-      const card = cardMap.get(txn.card_id);
-      if (!card) continue;
-
-      // Fall back to billing_cycle_date - 5 if no statement_date set
-      const statDay =
-        card.statement_date ??
-        Math.max(1, Math.min(28, card.billing_cycle_date - 5));
-      const billDay = card.billing_cycle_date;
-      const txDate = new Date(txn.transaction_date);
-      const { statementDate, billingDate, periodKey } = getBillingPeriod(
-        txDate,
-        statDay,
-        billDay
-      );
-
+    const addToGroup = (
+      txn: (typeof filteredTransactions)[0],
+      card: (typeof cards)[0],
+      statementDate: Date,
+      billingDate: Date,
+      periodKey: string
+    ) => {
       const groupKey = `${card.id}-${periodKey}`;
-
       if (!groupMap.has(groupKey)) {
         const billMs = billingDate.getTime();
         const todayMs = today.getTime();
@@ -98,6 +89,46 @@ export default function TransactionsScreen() {
         });
       }
       groupMap.get(groupKey)!.transactions.push(txn);
+    };
+
+    for (const txn of filteredTransactions) {
+      const card = cardMap.get(txn.card_id);
+      if (!card) continue;
+
+      // Fall back to billing_cycle_date - 5 if no statement_date set
+      const statDay =
+        card.statement_date ??
+        Math.max(1, Math.min(28, card.billing_cycle_date - 5));
+      const billDay = card.billing_cycle_date;
+      const txDate = new Date(txn.transaction_date);
+
+      if (txn.is_installment && txn.installment_months && txn.monthly_amount) {
+        // Fan out one entry per installment month; stop at future statement periods
+        let currentDate = txDate;
+        for (let i = 0; i < txn.installment_months; i++) {
+          const { statementDate, billingDate, periodKey } = getBillingPeriod(
+            currentDate,
+            statDay,
+            billDay
+          );
+          // Skip periods whose statement hasn't closed yet
+          if (statementDate > today) break;
+          addToGroup(txn, card, statementDate, billingDate, periodKey);
+          // Advance to the next billing period
+          currentDate = new Date(
+            statementDate.getFullYear(),
+            statementDate.getMonth(),
+            statementDate.getDate() + 1
+          );
+        }
+      } else {
+        const { statementDate, billingDate, periodKey } = getBillingPeriod(
+          txDate,
+          statDay,
+          billDay
+        );
+        addToGroup(txn, card, statementDate, billingDate, periodKey);
+      }
     }
 
     // Overdue first, then by billing date descending
@@ -252,76 +283,113 @@ export default function TransactionsScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerClassName="px-5 pb-6 gap-4"
           >
-            {billingGroups.map((group) => (
-              <View key={group.key} className="gap-2">
-                {/* Billing period section header */}
-                <View
-                  className={`rounded-xl border px-4 py-3 flex-row items-center justify-between ${
-                    group.isOverdue
-                      ? "border-red-600 bg-red-950/30"
-                      : group.isDueSoon
-                      ? "border-amber-600 bg-amber-950/30"
-                      : "border-slate-700 bg-slate-900/60"
-                  }`}
-                >
-                  <View className="gap-0.5 flex-1 mr-2">
-                    <View className="flex-row items-center gap-2">
-                      <View
-                        className={`w-2 h-2 rounded-full ${CARD_COLOR_BG_MAP[group.card.color]}`}
-                      />
-                      <Text className="text-white text-sm font-semibold">
-                        {group.card.bank} — {group.card.name}
-                      </Text>
+            {billingGroups.map((group) => {
+              const statementTotal = group.transactions.reduce(
+                (sum, t) => sum + (t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount),
+                0
+              );
+              const unpaidIds = group.transactions.filter((t) => !t.is_paid).map((t) => t.id);
+              return (
+                <View key={group.key} className="gap-2">
+                  {/* Billing period section header */}
+                  <View
+                    className={`rounded-xl border px-4 py-3 gap-3 ${
+                      group.isOverdue
+                        ? "border-red-600 bg-red-950/30"
+                        : group.isDueSoon
+                        ? "border-amber-600 bg-amber-950/30"
+                        : "border-slate-700 bg-slate-900/60"
+                    }`}
+                  >
+                    {/* Top row: card info + status badge */}
+                    <View className="flex-row items-center justify-between">
+                      <View className="gap-0.5 flex-1 mr-2">
+                        <View className="flex-row items-center gap-2">
+                          <View
+                            className={`w-2 h-2 rounded-full ${CARD_COLOR_BG_MAP[group.card.color]}`}
+                          />
+                          <Text className="text-white text-sm font-semibold">
+                            {group.card.bank} — {group.card.name}
+                          </Text>
+                        </View>
+                        <Text className="text-slate-400 text-xs">
+                          Statement closes:{" "}
+                          {format(group.statementDate, DATE_FORMAT)}
+                        </Text>
+                        <Text
+                          className={`text-xs font-medium ${
+                            group.isOverdue
+                              ? "text-red-400"
+                              : group.isDueSoon
+                              ? "text-amber-400"
+                              : "text-slate-400"
+                          }`}
+                        >
+                          Due: {format(group.billingDate, DATE_FORMAT)}
+                        </Text>
+                        <Text className="text-slate-500 text-xs">
+                          {group.transactions.length} transaction
+                          {group.transactions.length > 1 ? "s" : ""}
+                        </Text>
+                      </View>
+                      {group.isOverdue && (
+                        <View className="bg-red-500/20 border border-red-500 rounded-lg px-2 py-1">
+                          <Text className="text-red-400 text-xs font-bold">
+                            OVERDUE
+                          </Text>
+                        </View>
+                      )}
+                      {group.isDueSoon && !group.isOverdue && (
+                        <View className="bg-amber-500/20 border border-amber-500 rounded-lg px-2 py-1">
+                          <Text className="text-amber-400 text-xs font-bold">
+                            DUE SOON
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    <Text className="text-slate-400 text-xs">
-                      Statement closes:{" "}
-                      {format(group.statementDate, DATE_FORMAT)}
-                    </Text>
-                    <Text
-                      className={`text-xs font-medium ${
-                        group.isOverdue
-                          ? "text-red-400"
-                          : group.isDueSoon
-                          ? "text-amber-400"
-                          : "text-slate-400"
-                      }`}
-                    >
-                      Due: {format(group.billingDate, DATE_FORMAT)}
-                    </Text>
-                    <Text className="text-slate-500 text-xs">
-                      {group.transactions.length} transaction
-                      {group.transactions.length > 1 ? "s" : ""}
-                    </Text>
-                  </View>
-                  {group.isOverdue && (
-                    <View className="bg-red-500/20 border border-red-500 rounded-lg px-2 py-1">
-                      <Text className="text-red-400 text-xs font-bold">
-                        OVERDUE
-                      </Text>
-                    </View>
-                  )}
-                  {group.isDueSoon && !group.isOverdue && (
-                    <View className="bg-amber-500/20 border border-amber-500 rounded-lg px-2 py-1">
-                      <Text className="text-amber-400 text-xs font-bold">
-                        DUE SOON
-                      </Text>
-                    </View>
-                  )}
-                </View>
 
-                {/* Transactions in this billing period */}
-                {group.transactions.map((txn) => (
-                  <TransactionItem
-                    key={txn.id}
-                    transaction={txn}
-                    isOverdue={group.isOverdue}
-                    onPress={() => setSavingTarget(txn)}
-                    onDelete={() => setDeleteTarget(txn)}
-                    onTogglePaid={() => togglePaid(txn.id, !txn.is_paid)}
-                  />
-                ))}
-              </View>
-            ))}
+                    {/* Divider */}
+                    <View className="h-px bg-slate-700/60" />
+
+                    {/* Bottom row: statement total + Pay All */}
+                    <View className="flex-row items-center justify-between">
+                      <View className="gap-0.5">
+                        <Text className="text-slate-500 text-xs">Statement Total</Text>
+                        <Text className="text-white text-sm font-bold">
+                          {CURRENCY}{statementTotal.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                        </Text>
+                      </View>
+                      {unpaidIds.length > 0 ? (
+                        <Pressable
+                          onPress={() => markAllPaid(unpaidIds)}
+                          className="flex-row items-center gap-1.5 bg-emerald-700 border border-emerald-600 rounded-xl px-3 py-2 active:bg-emerald-800"
+                        >
+                          <Ionicons name="checkmark-done" size={15} color="white" />
+                          <Text className="text-white text-xs font-semibold">Pay All</Text>
+                        </Pressable>
+                      ) : (
+                        <View className="flex-row items-center gap-1.5 bg-emerald-950/50 border border-emerald-700 rounded-xl px-3 py-2">
+                          <Ionicons name="checkmark-done" size={15} color="#34d399" />
+                          <Text className="text-emerald-400 text-xs font-semibold">All Paid</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Transactions in this billing period */}
+                  {group.transactions.map((txn) => (
+                    <TransactionItem
+                      key={txn.id}
+                      transaction={txn}
+                      isOverdue={group.isOverdue}
+                      onPress={() => setSavingTarget(txn)}
+                      onDelete={() => setDeleteTarget(txn)}
+                      onTogglePaid={() => togglePaid(txn.id, !txn.is_paid)}
+                    />
+                  ))}
+                </View>
+              );
+            })}
           </ScrollView>
         )}
       </View>
