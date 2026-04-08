@@ -21,15 +21,7 @@ export function BillingGroupHeader({
 
   return (
     <View
-      className={`rounded-xl border overflow-hidden
-        ${
-            group.isOverdue
-            ? "border-red-700"
-            : group.isDueSoon
-            ? "border-amber-700"
-            : "border-slate-700"
-        }
-      `}
+      className={`rounded-xl border overflow-hidden border-slate-700`}
     >
       {/* Card color accent stripe */}
       <View className={`h-1.5 ${cardBgClass}`} />
