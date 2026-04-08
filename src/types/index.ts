@@ -38,9 +38,19 @@ export interface Transaction {
   updated_at: string;
   credit_card?: Pick<CreditCard, "name" | "bank" | "color" | "last_four_digits">;
   savings?: Saving[];
+  installment_payments?: InstallmentPayment[];
   total_saved?: number;
   remaining?: number;
   is_fully_saved?: boolean;
+  paid_periods_count?: number;
+}
+
+export interface InstallmentPayment {
+  id: string;
+  transaction_id: string;
+  user_id: string;
+  period_key: string;
+  created_at: string;
 }
 
 export interface Saving {

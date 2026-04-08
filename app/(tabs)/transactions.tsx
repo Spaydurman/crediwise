@@ -1,5 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
-import { format } from "date-fns";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,25 +11,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AddSavingSheet } from "@/components/savings/AddSavingSheet";
 import { AddTransactionSheet } from "@/components/transactions/AddTransactionSheet";
-import { TransactionItem } from "@/components/transactions/TransactionItem";
+import { BillingGroupCard } from "@/components/transactions/BillingGroupCard";
+import { NotificationPopup } from "@/components/transactions/NotificationPopup";
+import { PaidStatementsSection } from "@/components/transactions/PaidStatementsSection";
+import type { BillingGroup } from "@/components/transactions/types";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { CARD_COLOR_BG_MAP, CURRENCY, DATE_FORMAT } from "@/constants";
+import { CARD_COLOR_BG_MAP, CURRENCY } from "@/constants";
 import { useCards } from "@/hooks/useCards";
 import { useSavings } from "@/hooks/useSavings";
 import { useTransactions } from "@/hooks/useTransactions";
 import { getBillingPeriod } from "@/lib/billing";
-import type { AddSavingInput, AddTransactionInput, CreditCard, Transaction } from "@/types";
-
-interface BillingGroup {
-  key: string;
-  card: CreditCard;
-  statementDate: Date;
-  billingDate: Date;
-  isOverdue: boolean;
-  isDueSoon: boolean;
-  transactions: Transaction[];
-}
+import type { AddSavingInput, AddTransactionInput, Transaction } from "@/types";
 
 export default function TransactionsScreen() {
   const { cards } = useCards();
@@ -43,7 +35,8 @@ export default function TransactionsScreen() {
     addTransaction,
     deleteTransaction,
     togglePaid,
-    markAllPaid,
+    toggleInstallmentPeriodPaid,
+    markGroupPaid,
   } = useTransactions();
   const { addSaving } = useSavings();
 
@@ -52,6 +45,7 @@ export default function TransactionsScreen() {
   const [savingTarget, setSavingTarget] = useState<Transaction | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const filteredTransactions = selectedCardFilter
     ? transactions.filter((t) => t.card_id === selectedCardFilter)
@@ -80,6 +74,7 @@ export default function TransactionsScreen() {
         const todayMs = today.getTime();
         groupMap.set(groupKey, {
           key: groupKey,
+          periodKey,
           card,
           statementDate,
           billingDate,
@@ -94,8 +89,6 @@ export default function TransactionsScreen() {
     for (const txn of filteredTransactions) {
       const card = cardMap.get(txn.card_id);
       if (!card) continue;
-
-      // Fall back to billing_cycle_date - 5 if no statement_date set
       const statDay =
         card.statement_date ??
         Math.max(1, Math.min(28, card.billing_cycle_date - 5));
@@ -103,18 +96,13 @@ export default function TransactionsScreen() {
       const txDate = new Date(txn.transaction_date);
 
       if (txn.is_installment && txn.installment_months && txn.monthly_amount) {
-        // Fan out one entry per installment month; stop at future statement periods
         let currentDate = txDate;
         for (let i = 0; i < txn.installment_months; i++) {
           const { statementDate, billingDate, periodKey } = getBillingPeriod(
-            currentDate,
-            statDay,
-            billDay
+            currentDate, statDay, billDay
           );
-          // Skip periods whose statement hasn't closed yet
           if (statementDate > today) break;
           addToGroup(txn, card, statementDate, billingDate, periodKey);
-          // Advance to the next billing period
           currentDate = new Date(
             statementDate.getFullYear(),
             statementDate.getMonth(),
@@ -123,15 +111,12 @@ export default function TransactionsScreen() {
         }
       } else {
         const { statementDate, billingDate, periodKey } = getBillingPeriod(
-          txDate,
-          statDay,
-          billDay
+          txDate, statDay, billDay
         );
         addToGroup(txn, card, statementDate, billingDate, periodKey);
       }
     }
 
-    // Overdue first, then by billing date descending
     return Array.from(groupMap.values()).sort((a, b) => {
       if (a.isOverdue && !b.isOverdue) return -1;
       if (!a.isOverdue && b.isOverdue) return 1;
@@ -139,11 +124,36 @@ export default function TransactionsScreen() {
     });
   }, [filteredTransactions, cards, today]);
 
-  const overdueGroups = billingGroups.filter((g) => g.isOverdue);
-  const dueSoonGroups = billingGroups.filter((g) => g.isDueSoon);
+  const isGroupFullyPaid = (g: BillingGroup) =>
+    g.transactions.every((t) =>
+      t.is_installment
+        ? (t.installment_payments?.some((p) => p.period_key === g.periodKey) ?? false)
+        : t.is_paid
+    );
 
-  const handleAddSaving = async (data: AddSavingInput) => {
-    await addSaving(data);
+  const { activeGroups, paidStatements } = useMemo(() => {
+    const active: BillingGroup[] = [];
+    const paid: BillingGroup[] = [];
+    for (const g of billingGroups) {
+      if (isGroupFullyPaid(g)) paid.push(g);
+      else active.push(g);
+    }
+    return { activeGroups: active, paidStatements: paid };
+  }, [billingGroups]);
+
+  const overdueGroups = activeGroups.filter((g) => g.isOverdue);
+  const dueSoonGroups = activeGroups.filter((g) => g.isDueSoon);
+
+  const handleTogglePaidTxn = (
+    txn: Transaction,
+    group: BillingGroup,
+    isPaidForPeriod: boolean
+  ) => {
+    if (txn.is_installment) {
+      toggleInstallmentPeriodPaid(txn.id, group.periodKey, !isPaidForPeriod);
+    } else {
+      togglePaid(txn.id, !txn.is_paid);
+    }
   };
 
   const handleDelete = async () => {
@@ -153,7 +163,6 @@ export default function TransactionsScreen() {
       await deleteTransaction(deleteTarget.id);
       setDeleteTarget(null);
     } catch {
-      // error handled in hook
     } finally {
       setDeleting(false);
     }
@@ -162,69 +171,61 @@ export default function TransactionsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <View className="flex-1">
-        {/* Header */}
         <View className="px-5 pt-4 pb-3 flex-row items-center justify-between">
           <Text className="text-white text-2xl font-bold">Transactions</Text>
-          <Pressable
-            onPress={() => setShowAddTxn(true)}
-            className="flex-row items-center gap-2 bg-indigo-600 px-4 py-2.5 rounded-xl active:bg-indigo-700"
-          >
-            <Ionicons name="add" size={18} color="white" />
-            <Text className="text-white text-sm font-semibold">Add</Text>
-          </Pressable>
+          <View className="flex-row items-center gap-2">
+            {(overdueGroups.length > 0 || dueSoonGroups.length > 0) && (
+              <Pressable
+                onPress={() => setShowNotifications((v) => !v)}
+                className="relative w-10 h-10 bg-slate-800 border border-slate-700 rounded-xl items-center justify-center active:bg-slate-700"
+              >
+                <Ionicons
+                  name={showNotifications ? "notifications" : "notifications-outline"}
+                  size={18}
+                  color={overdueGroups.length > 0 ? "#f87171" : "#fbbf24"}
+                />
+                <View
+                  className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
+                    overdueGroups.length > 0 ? "bg-red-500" : "bg-amber-400"
+                  }`}
+                />
+              </Pressable>
+            )}
+            <Pressable
+              onPress={() => setShowAddTxn(true)}
+              className="flex-row items-center gap-2 bg-indigo-600 px-4 py-2.5 rounded-xl active:bg-indigo-700"
+            >
+              <Ionicons name="add" size={18} color="white" />
+              <Text className="text-white text-sm font-semibold">Add</Text>
+            </Pressable>
+          </View>
         </View>
 
-        {/* Summary bar */}
         <View className="px-5 pb-3">
           <View className="flex-row gap-2 bg-slate-900 border border-slate-800 rounded-2xl p-3">
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Spent</Text>
               <Text className="text-white text-sm font-bold">
-                {CURRENCY}
-                {totalSpending.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                {CURRENCY}{totalSpending.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
             <View className="w-px bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Saved</Text>
               <Text className="text-emerald-400 text-sm font-bold">
-                {CURRENCY}
-                {totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                {CURRENCY}{totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
             <View className="w-px bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Shortage</Text>
               <Text className="text-amber-400 text-sm font-bold">
-                {CURRENCY}
-                {totalRemaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                {CURRENCY}{totalRemaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Notification banners */}
-        {overdueGroups.length > 0 && (
-          <View className="mx-5 mb-2 bg-red-950 border border-red-700 rounded-xl p-3 flex-row items-center gap-3">
-            <Ionicons name="alert-circle" size={18} color="#f87171" />
-            <Text className="text-red-400 text-sm font-medium flex-1">
-              {overdueGroups.length} billing period
-              {overdueGroups.length > 1 ? "s are" : " is"} overdue — payment
-              required!
-            </Text>
-          </View>
-        )}
-        {dueSoonGroups.length > 0 && (
-          <View className="mx-5 mb-2 bg-amber-950 border border-amber-700 rounded-xl p-3 flex-row items-center gap-3">
-            <Ionicons name="warning" size={18} color="#fbbf24" />
-            <Text className="text-amber-400 text-sm font-medium flex-1">
-              {dueSoonGroups.length} billing period
-              {dueSoonGroups.length > 1 ? "s are" : " is"} due within 7 days
-            </Text>
-          </View>
-        )}
-
-        {/* Card filter tabs */}
         {cards.length > 0 && (
           <View className="mb-3">
             <FlatList
@@ -238,9 +239,7 @@ export default function TransactionsScreen() {
               contentContainerClassName="gap-2 px-5"
               renderItem={({ item }) => {
                 const isSelected = selectedCardFilter === item.id;
-                const colorClass = item.id
-                  ? CARD_COLOR_BG_MAP[item.color]
-                  : "bg-indigo-600";
+                const colorClass = item.id ? CARD_COLOR_BG_MAP[item.color] : "bg-indigo-600";
                 return (
                   <Pressable
                     onPress={() => setSelectedCardFilter(item.id ?? null)}
@@ -250,9 +249,7 @@ export default function TransactionsScreen() {
                         : "bg-slate-900 border-slate-800"
                     }`}
                   >
-                    {item.id && (
-                      <View className={`w-2.5 h-2.5 rounded-full ${colorClass}`} />
-                    )}
+                    {item.id && <View className={`w-2.5 h-2.5 rounded-full ${colorClass}`} />}
                     <Text
                       className={`text-xs font-semibold ${
                         isSelected ? "text-indigo-400" : "text-slate-400"
@@ -267,7 +264,6 @@ export default function TransactionsScreen() {
           </View>
         )}
 
-        {/* Content */}
         {loading ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator size="large" color="#6366f1" />
@@ -283,114 +279,40 @@ export default function TransactionsScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerClassName="px-5 pb-6 gap-4"
           >
-            {billingGroups.map((group) => {
-              const statementTotal = group.transactions.reduce(
-                (sum, t) => sum + (t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount),
-                0
-              );
-              const unpaidIds = group.transactions.filter((t) => !t.is_paid).map((t) => t.id);
-              return (
-                <View key={group.key} className="gap-2">
-                  {/* Billing period section header */}
-                  <View
-                    className={`rounded-xl border px-4 py-3 gap-3 ${
-                      group.isOverdue
-                        ? "border-red-600 bg-red-950/30"
-                        : group.isDueSoon
-                        ? "border-amber-600 bg-amber-950/30"
-                        : "border-slate-700 bg-slate-900/60"
-                    }`}
-                  >
-                    {/* Top row: card info + status badge */}
-                    <View className="flex-row items-center justify-between">
-                      <View className="gap-0.5 flex-1 mr-2">
-                        <View className="flex-row items-center gap-2">
-                          <View
-                            className={`w-2 h-2 rounded-full ${CARD_COLOR_BG_MAP[group.card.color]}`}
-                          />
-                          <Text className="text-white text-sm font-semibold">
-                            {group.card.bank} — {group.card.name}
-                          </Text>
-                        </View>
-                        <Text className="text-slate-400 text-xs">
-                          Statement closes:{" "}
-                          {format(group.statementDate, DATE_FORMAT)}
-                        </Text>
-                        <Text
-                          className={`text-xs font-medium ${
-                            group.isOverdue
-                              ? "text-red-400"
-                              : group.isDueSoon
-                              ? "text-amber-400"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          Due: {format(group.billingDate, DATE_FORMAT)}
-                        </Text>
-                        <Text className="text-slate-500 text-xs">
-                          {group.transactions.length} transaction
-                          {group.transactions.length > 1 ? "s" : ""}
-                        </Text>
-                      </View>
-                      {group.isOverdue && (
-                        <View className="bg-red-500/20 border border-red-500 rounded-lg px-2 py-1">
-                          <Text className="text-red-400 text-xs font-bold">
-                            OVERDUE
-                          </Text>
-                        </View>
-                      )}
-                      {group.isDueSoon && !group.isOverdue && (
-                        <View className="bg-amber-500/20 border border-amber-500 rounded-lg px-2 py-1">
-                          <Text className="text-amber-400 text-xs font-bold">
-                            DUE SOON
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-
-                    {/* Divider */}
-                    <View className="h-px bg-slate-700/60" />
-
-                    {/* Bottom row: statement total + Pay All */}
-                    <View className="flex-row items-center justify-between">
-                      <View className="gap-0.5">
-                        <Text className="text-slate-500 text-xs">Statement Total</Text>
-                        <Text className="text-white text-sm font-bold">
-                          {CURRENCY}{statementTotal.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
-                        </Text>
-                      </View>
-                      {unpaidIds.length > 0 ? (
-                        <Pressable
-                          onPress={() => markAllPaid(unpaidIds)}
-                          className="flex-row items-center gap-1.5 bg-emerald-700 border border-emerald-600 rounded-xl px-3 py-2 active:bg-emerald-800"
-                        >
-                          <Ionicons name="checkmark-done" size={15} color="white" />
-                          <Text className="text-white text-xs font-semibold">Pay All</Text>
-                        </Pressable>
-                      ) : (
-                        <View className="flex-row items-center gap-1.5 bg-emerald-950/50 border border-emerald-700 rounded-xl px-3 py-2">
-                          <Ionicons name="checkmark-done" size={15} color="#34d399" />
-                          <Text className="text-emerald-400 text-xs font-semibold">All Paid</Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-
-                  {/* Transactions in this billing period */}
-                  {group.transactions.map((txn) => (
-                    <TransactionItem
-                      key={txn.id}
-                      transaction={txn}
-                      isOverdue={group.isOverdue}
-                      onPress={() => setSavingTarget(txn)}
-                      onDelete={() => setDeleteTarget(txn)}
-                      onTogglePaid={() => togglePaid(txn.id, !txn.is_paid)}
-                    />
-                  ))}
-                </View>
-              );
-            })}
+            {activeGroups.map((group) => (
+              <BillingGroupCard
+                key={group.key}
+                group={group}
+                onPayAll={(regularIds, installmentItems) =>
+                  markGroupPaid(regularIds, installmentItems)
+                }
+                onPressTxn={(txn) => setSavingTarget(txn)}
+                onDeleteTxn={(txn) => setDeleteTarget(txn)}
+                onTogglePaidTxn={(txn, isPaidForPeriod) =>
+                  handleTogglePaidTxn(txn, group, isPaidForPeriod)
+                }
+              />
+            ))}
+            <PaidStatementsSection
+              groups={paidStatements}
+              onPressTxn={(txn) => setSavingTarget(txn)}
+              onDeleteTxn={(txn) => setDeleteTarget(txn)}
+              onTogglePaidTxn={(txn, isPaidForPeriod) => {
+                const group = paidStatements.find((g) =>
+                  g.transactions.some((t) => t.id === txn.id)
+                );
+                if (group) handleTogglePaidTxn(txn, group, isPaidForPeriod);
+              }}
+            />
           </ScrollView>
+        )}
+
+        {showNotifications && (
+          <NotificationPopup
+            overdueGroups={overdueGroups}
+            dueSoonGroups={dueSoonGroups}
+            onClose={() => setShowNotifications(false)}
+          />
         )}
       </View>
 
@@ -402,14 +324,12 @@ export default function TransactionsScreen() {
         }}
         cards={cards}
       />
-
       <AddSavingSheet
         visible={savingTarget !== null}
         onClose={() => setSavingTarget(null)}
-        onAdd={handleAddSaving}
+        onAdd={async (data: AddSavingInput) => { await addSaving(data); }}
         transaction={savingTarget}
       />
-
       <ConfirmModal
         visible={deleteTarget !== null}
         title="Delete Transaction"
@@ -422,4 +342,3 @@ export default function TransactionsScreen() {
     </SafeAreaView>
   );
 }
-

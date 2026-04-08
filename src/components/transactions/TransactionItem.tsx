@@ -8,6 +8,7 @@ import { Badge } from "../ui/Badge";
 interface TransactionItemProps {
   transaction: Transaction;
   isOverdue?: boolean;
+  isPaidForPeriod?: boolean;
   onPress?: () => void;
   onDelete?: () => void;
   onTogglePaid?: () => void;
@@ -36,6 +37,7 @@ function getSavingsLabel(
 export function TransactionItem({
   transaction,
   isOverdue = false,
+  isPaidForPeriod,
   onPress,
   onDelete,
   onTogglePaid,
@@ -45,6 +47,12 @@ export function TransactionItem({
   const isFullySaved = transaction.is_fully_saved ?? false;
   const cardColor = transaction.credit_card?.color ?? "indigo";
   const cardBgClass = CARD_COLOR_BG_MAP[cardColor];
+
+  // For installments, use the per-period paid flag; for regular, use the transaction flag
+  const effectivePaid = isPaidForPeriod ?? transaction.is_paid;
+
+  const paidPeriodsCount = transaction.paid_periods_count ?? 0;
+  const totalMonths = transaction.installment_months ?? 0;
 
   const savingsVariant = getSavingsVariant(isFullySaved, remaining, totalSaved);
   const savingsLabel = getSavingsLabel(isFullySaved, remaining, totalSaved);
@@ -92,14 +100,25 @@ export function TransactionItem({
           </Text>
           {transaction.is_installment && transaction.monthly_amount && (
             <Badge
-              label={`${CURRENCY}${transaction.monthly_amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}/mo × ${transaction.installment_months}`}
+              label={`${CURRENCY}${transaction.monthly_amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}/mo`}
               variant="info"
             />
           )}
-          {transaction.is_paid ? (
-            <Badge label="Paid ✓" variant="success" />
-          ) : (
-            <Badge label={savingsLabel} variant={savingsVariant} />
+          {transaction.is_installment && totalMonths > 0 && (
+            <Badge
+              label={`${paidPeriodsCount}/${totalMonths} mo paid`}
+              variant={paidPeriodsCount >= totalMonths ? "success" : paidPeriodsCount > 0 ? "warning" : "neutral"}
+            />
+          )}
+          {!transaction.is_installment && (
+            effectivePaid ? (
+              <Badge label="Paid ✓" variant="success" />
+            ) : (
+              <Badge label={savingsLabel} variant={savingsVariant} />
+            )
+          )}
+          {transaction.is_installment && effectivePaid && (
+            <Badge label="This mo. paid ✓" variant="success" />
           )}
         </View>
       </View>
@@ -135,12 +154,12 @@ export function TransactionItem({
               className="flex-row items-center gap-1 px-3 py-1 rounded-lg active:bg-indigo-900/30"
             >
               <Ionicons
-                name={transaction.is_paid ? "close-circle-outline" : "checkmark-circle-outline"}
+                name={effectivePaid ? "close-circle-outline" : "checkmark-circle-outline"}
                 size={14}
-                color={transaction.is_paid ? "#f59e0b" : "#6366f1"}
+                color={effectivePaid ? "#f59e0b" : "#6366f1"}
               />
-              <Text className={`text-xs font-medium ${transaction.is_paid ? "text-amber-400" : "text-indigo-400"}`}>
-                {transaction.is_paid ? "Unpaid" : "Mark Paid"}
+              <Text className={`text-xs font-medium ${effectivePaid ? "text-amber-400" : "text-indigo-400"}`}>
+                {effectivePaid ? "Unpaid" : "Mark Paid"}
               </Text>
             </Pressable>
           )}

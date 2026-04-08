@@ -10,7 +10,8 @@ export function useTransactions(cardId?: string) {
     addTransaction,
     deleteTransaction,
     togglePaid,
-    markAllPaid,
+    toggleInstallmentPeriodPaid,
+    markGroupPaid,
   } = useTransactionsStore();
 
   useEffect(() => {
@@ -45,7 +46,8 @@ export function useTransactions(cardId?: string) {
     addTransaction,
     deleteTransaction,
     togglePaid,
-    markAllPaid,
+    toggleInstallmentPeriodPaid,
+    markGroupPaid,
     refetch: fetchTransactions,
   };
 }

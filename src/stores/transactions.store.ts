@@ -10,11 +10,13 @@ function enrichTransactions(raw: Transaction[]): Transaction[] {
     const trackableAmount =
       t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount;
     const remaining = Math.max(0, trackableAmount - totalSaved);
+    const paid_periods_count = t.installment_payments?.length ?? 0;
     return {
       ...t,
       total_saved: totalSaved,
       remaining,
       is_fully_saved: remaining === 0,
+      paid_periods_count,
     };
   });
 }
@@ -22,7 +24,8 @@ function enrichTransactions(raw: Transaction[]): Transaction[] {
 const TRANSACTION_SELECT = `
   *,
   credit_card:credit_cards(name, bank, color, last_four_digits),
-  savings(id, amount, notes, saved_date, created_at)
+  savings(id, amount, notes, saved_date, created_at),
+  installment_payments(id, period_key, created_at)
 `;
 
 interface TransactionsState {
@@ -33,7 +36,8 @@ interface TransactionsState {
   addTransaction: (input: AddTransactionInput) => Promise<Transaction>;
   deleteTransaction: (id: string) => Promise<void>;
   togglePaid: (id: string, isPaid: boolean) => Promise<void>;
-  markAllPaid: (ids: string[]) => Promise<void>;
+  toggleInstallmentPeriodPaid: (transactionId: string, periodKey: string, paid: boolean) => Promise<void>;
+  markGroupPaid: (regularIds: string[], installmentItems: { transactionId: string; periodKey: string }[]) => Promise<void>;
   reset: () => void;
 }
 
@@ -109,13 +113,71 @@ export const useTransactionsStore = create<TransactionsState>((set) => ({
     }));
   },
 
-  markAllPaid: async (ids) => {
+  toggleInstallmentPeriodPaid: async (transactionId, periodKey, paid) => {
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error("Not authenticated");
+
+    if (paid) {
+      const { error } = await supabase
+        .from("installment_payments")
+        .insert({ transaction_id: transactionId, user_id: user.id, period_key: periodKey });
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("installment_payments")
+        .delete()
+        .eq("transaction_id", transactionId)
+        .eq("period_key", periodKey);
+      if (error) throw error;
+    }
+
     const { data, error } = await supabase
       .from("transactions")
-      .update({ is_paid: true })
-      .in("id", ids)
-      .select(TRANSACTION_SELECT);
+      .select(TRANSACTION_SELECT)
+      .eq("id", transactionId)
+      .single();
+    if (error) throw error;
+    const enriched = enrichTransactions([data as Transaction])[0];
+    set((state) => ({
+      transactions: state.transactions.map((t) => (t.id === transactionId ? enriched : t)),
+    }));
+  },
 
+  markGroupPaid: async (regularIds, installmentItems) => {
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error("Not authenticated");
+
+    const promises: Promise<unknown>[] = [];
+
+    if (regularIds.length > 0) {
+      promises.push(
+        (async () => supabase.from("transactions").update({ is_paid: true }).in("id", regularIds))()
+      );
+    }
+    if (installmentItems.length > 0) {
+      promises.push(
+        (async () =>
+          supabase.from("installment_payments").upsert(
+            installmentItems.map((item) => ({
+              transaction_id: item.transactionId,
+              user_id: user.id,
+              period_key: item.periodKey,
+            })),
+            { onConflict: "transaction_id,period_key", ignoreDuplicates: true }
+          ))()
+      );
+    }
+
+    await Promise.all(promises);
+
+    const allIds = [
+      ...regularIds,
+      ...installmentItems.map((i) => i.transactionId),
+    ];
+    const { data, error } = await supabase
+      .from("transactions")
+      .select(TRANSACTION_SELECT)
+      .in("id", allIds);
     if (error) throw error;
     const enriched = enrichTransactions((data as Transaction[]) ?? []);
     set((state) => ({
