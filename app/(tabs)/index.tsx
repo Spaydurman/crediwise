@@ -92,7 +92,7 @@ function CardSummaryItem({ card, spending, saved, remaining }: {
 export default function DashboardScreen() {
   const { user, signOut } = useAuthStore();
   const { cards } = useCards();
-  const { transactions, totalSpending, totalSaved, totalRemaining } =
+  const { transactions, totalSpending, totalSaved, totalRemaining, unpaidSpending, unpaidSaved, unpaidShortage } =
     useTransactions();
 
   const fullyPaidCount = transactions.filter((t) => t.is_fully_saved).length;
@@ -134,23 +134,30 @@ export default function DashboardScreen() {
               Overall Summary
             </Text>
             <View className="gap-1">
-              <Text className="text-slate-500 text-sm">Total Credit Card Spending</Text>
+              <Text className="text-slate-500 text-sm">Overall Credit Card Spending</Text>
               <Text className="text-white text-4xl font-bold">
                 {CURRENCY}
                 {totalSpending.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+              </Text>
+            </View>
+            <View className="gap-1">
+              <Text className="text-slate-500 text-sm">Total Credit Card Spending</Text>
+              <Text className="text-indigo-400 text-2xl font-bold">
+                {CURRENCY}
+                {unpaidSpending.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
             <View className="h-px bg-slate-800" />
             <View className="flex-row gap-3">
               <StatCard
                 label="Total Saved"
-                value={`${CURRENCY}${totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`}
+                value={`${CURRENCY}${unpaidSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`}
                 accent="text-emerald-400"
                 subtitle={`${fullyPaidCount} transactions`}
               />
               <StatCard
                 label="Still Short"
-                value={`${CURRENCY}${totalRemaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`}
+                value={`${CURRENCY}${unpaidShortage.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`}
                 accent="text-amber-400"
                 subtitle={`${pendingCount} transactions`}
               />

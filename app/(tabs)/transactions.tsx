@@ -29,9 +29,6 @@ export default function TransactionsScreen() {
   const {
     transactions,
     loading,
-    totalSpending,
-    totalSaved,
-    totalRemaining,
     addTransaction,
     deleteTransaction,
     togglePaid,
@@ -144,6 +141,34 @@ export default function TransactionsScreen() {
   const overdueGroups = activeGroups.filter((g) => g.isOverdue);
   const dueSoonGroups = activeGroups.filter((g) => g.isDueSoon);
 
+  const { activeSpending, activeSaved, activeShortage } = useMemo(() => {
+    // Spending: sum per-period amounts across all active groups (installments count monthly_amount each period)
+    const spending = activeGroups.reduce(
+      (sum, g) =>
+        sum +
+        g.transactions.reduce(
+          (s, t) =>
+            s + (t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount),
+          0
+        ),
+      0
+    );
+    // Saved/shortage: deduplicate per transaction since total_saved/remaining are per-transaction metrics
+    const seenIds = new Set<string>();
+    let saved = 0;
+    let shortage = 0;
+    for (const g of activeGroups) {
+      for (const t of g.transactions) {
+        if (!seenIds.has(t.id)) {
+          seenIds.add(t.id);
+          saved += t.total_saved ?? 0;
+          shortage += t.remaining ?? (t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount);
+        }
+      }
+    }
+    return { activeSpending: spending, activeSaved: saved, activeShortage: shortage };
+  }, [activeGroups]);
+
   const handleTogglePaidTxn = (
     txn: Transaction,
     group: BillingGroup,
@@ -206,21 +231,21 @@ export default function TransactionsScreen() {
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Spent</Text>
               <Text className="text-white text-sm font-bold">
-                {CURRENCY}{totalSpending.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                {CURRENCY}{activeSpending.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
             <View className="w-px bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Saved</Text>
               <Text className="text-emerald-400 text-sm font-bold">
-                {CURRENCY}{totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                {CURRENCY}{activeSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
             <View className="w-px bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Shortage</Text>
               <Text className="text-amber-400 text-sm font-bold">
-                {CURRENCY}{totalRemaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                {CURRENCY}{activeShortage.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
           </View>
