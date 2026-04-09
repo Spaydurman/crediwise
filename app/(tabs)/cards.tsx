@@ -29,12 +29,24 @@ export default function CardsScreen() {
   const getCardSpending = (cardId: string) =>
     transactions
       .filter((t) => t.card_id === cardId)
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => {
+        if (t.is_installment && t.monthly_amount && t.installment_months) {
+          const paidPeriods = t.paid_periods_count ?? 0;
+          const unpaidPeriods = Math.max(0, t.installment_months - paidPeriods);
+          return sum + t.monthly_amount * unpaidPeriods;
+        }
+        if (t.is_paid) return sum;
+        return sum + t.amount;
+      }, 0);
 
   const getCardSaved = (cardId: string) =>
     transactions
       .filter((t) => t.card_id === cardId)
-      .reduce((sum, t) => sum + (t.total_saved ?? 0), 0);
+      .reduce((sum, t) => {
+        if (t.is_installment && (t.paid_periods_count ?? 0) >= (t.installment_months ?? 0))
+          return sum;
+        return sum + (t.total_saved ?? 0);
+      }, 0);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
