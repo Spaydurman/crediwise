@@ -112,7 +112,6 @@ export function AddTransactionSheet({
       visible={visible}
       onClose={onClose}
       title="Add Transaction"
-      snapHeight={750}
     >
       <ScrollView
         className="px-5 py-4"
