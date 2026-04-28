@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View } from "react-native";
 import { TransactionItem } from "./TransactionItem";
 import { BillingGroupHeader } from "./BillingGroupHeader";
@@ -8,7 +9,7 @@ interface BillingGroupCardProps {
   onPayAll: (
     regularIds: string[],
     installmentItems: { transactionId: string; periodKey: string }[]
-  ) => void;
+  ) => Promise<void> | void;
   onPressTxn: (txn: BillingGroup["transactions"][0]) => void;
   onDeleteTxn: (txn: BillingGroup["transactions"][0]) => void;
   onTogglePaidTxn: (txn: BillingGroup["transactions"][0], isPaidForPeriod: boolean) => void;
@@ -21,6 +22,8 @@ export function BillingGroupCard({
   onDeleteTxn,
   onTogglePaidTxn,
 }: BillingGroupCardProps) {
+  const [paying, setPaying] = useState(false);
+
   const statementTotal = group.transactions.reduce(
     (sum, t) =>
       sum + (t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount),
@@ -38,13 +41,23 @@ export function BillingGroupCard({
     .map((t) => ({ transactionId: t.id, periodKey: group.periodKey }));
   const allPaid = unpaidRegularIds.length === 0 && unpaidInstallmentItems.length === 0;
 
+  const handlePayAll = async () => {
+    setPaying(true);
+    try {
+      await onPayAll(unpaidRegularIds, unpaidInstallmentItems);
+    } finally {
+      setPaying(false);
+    }
+  };
+
   return (
     <View className="gap-1.5">
       <BillingGroupHeader
         group={group}
         statementTotal={statementTotal}
         allPaid={allPaid}
-        onPayAll={() => onPayAll(unpaidRegularIds, unpaidInstallmentItems)}
+        paying={paying}
+        onPayAll={handlePayAll}
       />
       {group.transactions.map((txn) => {
         const isPaidForPeriod = txn.is_installment

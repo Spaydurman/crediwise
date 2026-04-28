@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { CARD_COLOR_BG_MAP, CURRENCY, DATE_FORMAT } from "../../constants";
 import type { BillingGroup } from "./types";
 
@@ -8,6 +8,7 @@ interface BillingGroupHeaderProps {
   group: BillingGroup;
   statementTotal: number;
   allPaid: boolean;
+  paying?: boolean;
   onPayAll: () => void;
 }
 
@@ -15,6 +16,7 @@ export function BillingGroupHeader({
   group,
   statementTotal,
   allPaid,
+  paying = false,
   onPayAll,
 }: BillingGroupHeaderProps) {
   const cardBgClass = CARD_COLOR_BG_MAP[group.card.color];
@@ -104,10 +106,19 @@ export function BillingGroupHeader({
           </View>
           {!allPaid ? (
             <Pressable
-              onPress={onPayAll}
-              className="flex-row items-center gap-1.5 bg-emerald-700 border border-emerald-600 rounded-xl px-3 py-2 active:bg-emerald-800"
+              onPress={paying ? undefined : onPayAll}
+              disabled={paying}
+              className={`flex-row items-center gap-1.5 border rounded-xl px-3 py-2 ${
+                paying
+                  ? "bg-emerald-900/60 border-emerald-700/50"
+                  : "bg-emerald-700 border-emerald-600 active:bg-emerald-800"
+              }`}
             >
-              <Ionicons name="checkmark-done" size={15} color="white" />
+              {paying ? (
+                <ActivityIndicator size={15} color="white" />
+              ) : (
+                <Ionicons name="checkmark-done" size={15} color="white" />
+              )}
               <Text className="text-white text-xs font-semibold">Pay All</Text>
             </Pressable>
           ) : (
