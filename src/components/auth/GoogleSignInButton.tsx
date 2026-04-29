@@ -4,9 +4,38 @@ import { ActivityIndicator, Alert, Pressable, Text } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
 
-WebBrowser.maybeCompleteAuthSession();
-
 const REDIRECT_URI = "crediwise://google-auth";
+
+async function processOAuthCallback(url: string): Promise<void> {
+  const parsedUrl = new URL(url);
+
+  const code = parsedUrl.searchParams.get("code");
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(url);
+    if (error) throw error;
+    return;
+  }
+
+  const hashParams = new URLSearchParams(parsedUrl.hash.replace(/^#/, ""));
+  const access_token =
+    hashParams.get("access_token") ??
+    parsedUrl.searchParams.get("access_token");
+  const refresh_token =
+    hashParams.get("refresh_token") ??
+    parsedUrl.searchParams.get("refresh_token");
+
+  if (!access_token || !refresh_token) {
+    throw new Error("Missing session tokens from Google");
+  }
+
+  const { error } = await supabase.auth.setSession({
+    access_token,
+    refresh_token,
+  });
+  if (error) throw error;
+}
+
+export { processOAuthCallback };
 
 export function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
@@ -35,28 +64,7 @@ export function GoogleSignInButton() {
 
       if (result.type !== "success") return;
 
-      const parsedUrl = new URL(result.url);
-      const hashParams = new URLSearchParams(
-        parsedUrl.hash.replace(/^#/, "")
-      );
-
-      const access_token =
-        hashParams.get("access_token") ??
-        parsedUrl.searchParams.get("access_token");
-      const refresh_token =
-        hashParams.get("refresh_token") ??
-        parsedUrl.searchParams.get("refresh_token");
-
-      if (!access_token || !refresh_token) {
-        throw new Error("Missing session tokens from Google");
-      }
-
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token,
-        refresh_token,
-      });
-
-      if (sessionError) throw sessionError;
+      await processOAuthCallback(result.url);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Something went wrong.";
