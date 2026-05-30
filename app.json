@@ -56,7 +56,8 @@
         {
           "experimentalLauncherActivity": false
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
