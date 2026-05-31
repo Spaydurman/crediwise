@@ -93,7 +93,6 @@ export function AddSavingSheet({
         className="px-5 py-4"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        automaticallyAdjustKeyboardInsets
       >
         <View className="gap-4 pb-8">
           {transaction && (

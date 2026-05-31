@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { TransactionItem } from "./TransactionItem";
 import { BillingGroupHeader } from "./BillingGroupHeader";
+import { getBillingGroupSummary } from "./summary";
 import type { BillingGroup } from "./types";
 
 interface BillingGroupCardProps {
@@ -22,13 +23,11 @@ export function BillingGroupCard({
   onDeleteTxn,
   onTogglePaidTxn,
 }: BillingGroupCardProps) {
+  const [expanded, setExpanded] = useState(true);
   const [paying, setPaying] = useState(false);
 
-  const statementTotal = group.transactions.reduce(
-    (sum, t) =>
-      sum + (t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount),
-    0
-  );
+  const { itemCount, statementTotal, statementSaved, statementShortage } =
+    getBillingGroupSummary(group);
   const unpaidRegularIds = group.transactions
     .filter((t) => !t.is_installment && !t.is_paid)
     .map((t) => t.id);
@@ -54,12 +53,18 @@ export function BillingGroupCard({
     <View className="gap-1.5">
       <BillingGroupHeader
         group={group}
+        itemCount={itemCount}
         statementTotal={statementTotal}
+        statementSaved={statementSaved}
+        statementShortage={statementShortage}
         allPaid={allPaid}
         paying={paying}
         onPayAll={handlePayAll}
+        expanded={expanded}
+        onToggleExpanded={() => setExpanded((value) => !value)}
       />
-      {group.transactions.map((txn) => {
+      {expanded &&
+        group.transactions.map((txn) => {
         const isPaidForPeriod = txn.is_installment
           ? (txn.installment_payments?.some((p) => p.period_key === group.periodKey) ?? false)
           : txn.is_paid;
