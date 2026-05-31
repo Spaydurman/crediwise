@@ -12,7 +12,6 @@ interface TransactionItemProps {
   onPress?: () => void;
   onDelete?: () => void;
   onTogglePaid?: () => void;
-  onToggleSubscriptionActive?: () => void;
 }
 
 function getSavingsVariant(
@@ -42,7 +41,6 @@ export function TransactionItem({
   onPress,
   onDelete,
   onTogglePaid,
-  onToggleSubscriptionActive,
 }: TransactionItemProps) {
   const isSubscription = transaction.is_subscription;
   const totalSaved = transaction.total_saved ?? 0;
@@ -144,32 +142,30 @@ export function TransactionItem({
         </View>
       </View>
 
-      {!isSubscription && (
-        <View className="gap-1.5">
-          <View className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <View
-              className={`h-full rounded-full ${
-                isFullySaved ? "bg-emerald-500" : totalSaved > 0 ? "bg-amber-500" : "bg-slate-700"
-              }`}
-              style={{ width: `${progressPercent}%` }}
-            />
-          </View>
-          <View className="flex-row justify-between">
-            <Text className="text-slate-500 text-xs">
-              Saved: {CURRENCY}
-              {totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
-            </Text>
-            {!isFullySaved && (
-              <Text className="text-slate-500 text-xs">
-                Remaining: {CURRENCY}
-                {remaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
-              </Text>
-            )}
-          </View>
+      <View className="gap-1.5">
+        <View className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <View
+            className={`h-full rounded-full ${
+              isFullySaved ? "bg-emerald-500" : totalSaved > 0 ? "bg-amber-500" : "bg-slate-700"
+            }`}
+            style={{ width: `${progressPercent}%` }}
+          />
         </View>
-      )}
+        <View className="flex-row justify-between">
+          <Text className="text-slate-500 text-xs">
+            Saved: {CURRENCY}
+            {totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+          </Text>
+          {!isFullySaved && (
+            <Text className="text-slate-500 text-xs">
+              Remaining: {CURRENCY}
+              {remaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+            </Text>
+          )}
+        </View>
+      </View>
 
-      {(onDelete || onToggleSubscriptionActive || onTogglePaid) && (
+      {(onDelete || onTogglePaid) && (
         <View className="flex-row justify-end gap-3 border-t border-slate-800 pt-2">
           {onTogglePaid && (
             <Pressable
@@ -183,25 +179,6 @@ export function TransactionItem({
               />
               <Text className={`text-xs font-medium ${effectivePaid ? "text-amber-400" : "text-indigo-400"}`}>
                 {effectivePaid ? "Unpaid" : "Mark Paid"}
-              </Text>
-            </Pressable>
-          )}
-          {isSubscription && onToggleSubscriptionActive && (
-            <Pressable
-              onPress={onToggleSubscriptionActive}
-              className="flex-row items-center gap-1 px-3 py-1 rounded-lg active:bg-teal-900/30"
-            >
-              <Ionicons
-                name={transaction.subscription_active ? "pause-circle-outline" : "play-circle-outline"}
-                size={14}
-                color={transaction.subscription_active ? "#2dd4bf" : "#22c55e"}
-              />
-              <Text
-                className={`text-xs font-medium ${
-                  transaction.subscription_active ? "text-teal-400" : "text-green-400"
-                }`}
-              >
-                {transaction.subscription_active ? "Set Inactive" : "Set Active"}
               </Text>
             </Pressable>
           )}

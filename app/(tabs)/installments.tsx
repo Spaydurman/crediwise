@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   Text,
   View,
@@ -11,14 +12,37 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CARD_COLOR_BG_MAP, CURRENCY, DATE_FORMAT } from "@/constants";
 import { useTransactions } from "@/hooks/useTransactions";
+import type { Transaction } from "@/types";
 
 export default function InstallmentsScreen() {
-  const { transactions, loading } = useTransactions();
+  const { transactions, loading, setSubscriptionActive } = useTransactions();
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const installments = useMemo(
     () => transactions.filter((t) => t.is_installment),
     [transactions]
   );
+
+  const subscriptions = useMemo(
+    () => transactions.filter((t) => t.is_subscription),
+    [transactions]
+  );
+
+  const activeSubscriptions = subscriptions.filter((s) => s.subscription_active);
+  const inactiveSubscriptions = subscriptions.filter((s) => !s.subscription_active);
+  const monthlySubscriptionTotal = activeSubscriptions.reduce(
+    (sum, s) => sum + s.amount,
+    0
+  );
+
+  const handleToggleSubscription = async (txn: Transaction) => {
+    setTogglingId(txn.id);
+    try {
+      await setSubscriptionActive(txn.id, !txn.subscription_active);
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const active = useMemo(
     () =>
@@ -58,24 +82,26 @@ export default function InstallmentsScreen() {
     <SafeAreaView className="flex-1 bg-slate-950">
       {/* Header */}
       <View className="px-5 pt-4 pb-3">
-        <Text className="text-white text-2xl font-bold">Installments</Text>
+        <Text className="text-white text-2xl font-bold">Recurring</Text>
         <Text className="text-slate-500 text-sm mt-0.5">
-          {active.length} active · {completed.length} completed
+          {active.length} installment{active.length === 1 ? "" : "s"} ·{" "}
+          {activeSubscriptions.length} subscription
+          {activeSubscriptions.length === 1 ? "" : "s"}
         </Text>
       </View>
 
-      {installments.length === 0 ? (
+      {installments.length === 0 && subscriptions.length === 0 ? (
         <EmptyState
           icon="layers-outline"
-          title="No installments yet"
-          description="Add a transaction and enable the installment toggle to start tracking monthly payments."
+          title="Nothing recurring yet"
+          description="Add a transaction and enable Installment or Subscription to start tracking recurring payments."
         />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerClassName="px-5 pb-8 gap-5"
         >
-          {/* Summary */}
+          {/* Installment summary */}
           {active.length > 0 && (
             <View className="flex-row gap-2 bg-slate-900 border border-slate-800 rounded-2xl p-3">
               <View className="flex-1 items-center gap-0.5">
@@ -111,7 +137,7 @@ export default function InstallmentsScreen() {
           {active.length > 0 && (
             <View className="gap-3">
               <Text className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                Active
+                Active Installments
               </Text>
               {active.map((txn) => (
                 <InstallmentCard key={txn.id} transaction={txn} />
@@ -123,16 +149,174 @@ export default function InstallmentsScreen() {
           {completed.length > 0 && (
             <View className="gap-3">
               <Text className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                Completed
+                Completed Installments
               </Text>
               {completed.map((txn) => (
                 <InstallmentCard key={txn.id} transaction={txn} />
               ))}
             </View>
           )}
+
+          {/* Subscription summary */}
+          {subscriptions.length > 0 && (
+            <View className="flex-row gap-2 bg-slate-900 border border-slate-800 rounded-2xl p-3">
+              <View className="flex-1 items-center gap-0.5">
+                <Text className="text-slate-500 text-xs">Monthly Subs</Text>
+                <Text className="text-white text-sm font-bold">
+                  {CURRENCY}
+                  {monthlySubscriptionTotal.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                  })}
+                </Text>
+              </View>
+              <View className="w-px bg-slate-800" />
+              <View className="flex-1 items-center gap-0.5">
+                <Text className="text-slate-500 text-xs">Active</Text>
+                <Text className="text-teal-400 text-sm font-bold">
+                  {activeSubscriptions.length}
+                </Text>
+              </View>
+              <View className="w-px bg-slate-800" />
+              <View className="flex-1 items-center gap-0.5">
+                <Text className="text-slate-500 text-xs">Inactive</Text>
+                <Text className="text-slate-400 text-sm font-bold">
+                  {inactiveSubscriptions.length}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {activeSubscriptions.length > 0 && (
+            <View className="gap-3">
+              <Text className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                Active Subscriptions
+              </Text>
+              {activeSubscriptions.map((txn) => (
+                <SubscriptionCard
+                  key={txn.id}
+                  transaction={txn}
+                  toggling={togglingId === txn.id}
+                  onToggle={() => handleToggleSubscription(txn)}
+                />
+              ))}
+            </View>
+          )}
+
+          {inactiveSubscriptions.length > 0 && (
+            <View className="gap-3">
+              <Text className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                Inactive Subscriptions
+              </Text>
+              {inactiveSubscriptions.map((txn) => (
+                <SubscriptionCard
+                  key={txn.id}
+                  transaction={txn}
+                  toggling={togglingId === txn.id}
+                  onToggle={() => handleToggleSubscription(txn)}
+                />
+              ))}
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
+  );
+}
+
+function SubscriptionCard({
+  transaction: t,
+  toggling,
+  onToggle,
+}: {
+  transaction: Transaction;
+  toggling: boolean;
+  onToggle: () => void;
+}) {
+  const cardColor = t.credit_card?.color ?? "indigo";
+  const cardBgClass = CARD_COLOR_BG_MAP[cardColor];
+  const isActive = t.subscription_active;
+
+  return (
+    <View
+      className={`bg-slate-900 border rounded-xl p-4 gap-3 ${
+        isActive ? "border-teal-800/50" : "border-slate-800"
+      }`}
+    >
+      <View className="flex-row items-start gap-3">
+        <View
+          className={`${cardBgClass} w-10 h-10 rounded-xl items-center justify-center flex-shrink-0`}
+        >
+          <Ionicons name="repeat-outline" size={18} color="white" />
+        </View>
+
+        <View className="flex-1 gap-0.5">
+          <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+            {t.description}
+          </Text>
+          <Text className="text-slate-500 text-xs">
+            {t.credit_card?.bank} · {t.credit_card?.name}
+          </Text>
+          <Text className="text-slate-500 text-xs">
+            Started: {format(new Date(t.transaction_date), DATE_FORMAT)}
+          </Text>
+          {!isActive && t.subscription_inactive_at && (
+            <Text className="text-slate-500 text-xs">
+              Stopped: {format(new Date(t.subscription_inactive_at), DATE_FORMAT)}
+            </Text>
+          )}
+        </View>
+
+        <View className="items-end gap-1">
+          <Text className="text-white font-bold text-base">
+            {CURRENCY}
+            {t.amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+          </Text>
+          <Text className="text-teal-400 text-xs font-semibold">per month</Text>
+          <View
+            className={`px-2 py-0.5 rounded-full border ${
+              isActive
+                ? "bg-teal-900/60 border-teal-700"
+                : "bg-slate-800 border-slate-700"
+            }`}
+          >
+            <Text
+              className={`text-xs font-semibold ${
+                isActive ? "text-teal-400" : "text-slate-400"
+              }`}
+            >
+              {isActive ? "Active" : "Inactive"}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <Pressable
+        onPress={toggling ? undefined : onToggle}
+        disabled={toggling}
+        className={`flex-row items-center justify-center gap-2 rounded-xl py-2.5 border ${
+          isActive
+            ? "bg-slate-800 border-slate-700 active:bg-slate-700"
+            : "bg-teal-700 border-teal-600 active:bg-teal-800"
+        } ${toggling ? "opacity-60" : ""}`}
+      >
+        {toggling ? (
+          <ActivityIndicator size={14} color={isActive ? "#cbd5e1" : "white"} />
+        ) : (
+          <Ionicons
+            name={isActive ? "pause-circle-outline" : "play-circle-outline"}
+            size={16}
+            color={isActive ? "#cbd5e1" : "white"}
+          />
+        )}
+        <Text
+          className={`text-xs font-semibold ${
+            isActive ? "text-slate-200" : "text-white"
+          }`}
+        >
+          {isActive ? "Set Inactive" : "Set Active"}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 

@@ -58,7 +58,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="installments"
         options={{
-          title: "Installments",
+          title: "Recurring",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="layers" size={size} color={color} />
           ),

@@ -14,7 +14,6 @@ interface BillingGroupCardProps {
   onPressTxn: (txn: BillingGroup["transactions"][0]) => void;
   onDeleteTxn: (txn: BillingGroup["transactions"][0]) => void;
   onTogglePaidTxn: (txn: BillingGroup["transactions"][0], isPaidForPeriod: boolean) => void;
-  onToggleSubscriptionTxn: (txn: BillingGroup["transactions"][0]) => void;
 }
 
 export function BillingGroupCard({
@@ -23,7 +22,6 @@ export function BillingGroupCard({
   onPressTxn,
   onDeleteTxn,
   onTogglePaidTxn,
-  onToggleSubscriptionTxn,
 }: BillingGroupCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -76,12 +74,9 @@ export function BillingGroupCard({
             transaction={txn}
             isOverdue={group.isOverdue}
             isPaidForPeriod={isPaidForPeriod}
-            onPress={txn.is_subscription ? undefined : () => onPressTxn(txn)}
+            onPress={() => onPressTxn(txn)}
             onDelete={() => onDeleteTxn(txn)}
             onTogglePaid={() => onTogglePaidTxn(txn, isPaidForPeriod)}
-            onToggleSubscriptionActive={
-              txn.is_subscription ? () => onToggleSubscriptionTxn(txn) : undefined
-            }
           />
         );
       })}

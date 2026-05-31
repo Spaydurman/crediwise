@@ -35,7 +35,6 @@ export default function TransactionsScreen() {
     addTransaction,
     deleteTransaction,
     togglePaid,
-    setSubscriptionActive,
     toggleInstallmentPeriodPaid,
     markGroupPaid,
   } = useTransactions();
@@ -212,11 +211,6 @@ export default function TransactionsScreen() {
     }
   };
 
-  const handleToggleSubscriptionTxn = (txn: Transaction) => {
-    if (!txn.is_subscription) return;
-    void setSubscriptionActive(txn.id, !txn.subscription_active);
-  };
-
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
@@ -352,7 +346,6 @@ export default function TransactionsScreen() {
                 onTogglePaidTxn={(txn, isPaidForPeriod) =>
                   handleTogglePaidTxn(txn, group, isPaidForPeriod)
                 }
-                onToggleSubscriptionTxn={handleToggleSubscriptionTxn}
               />
             ))}
             <PaidStatementsSection
@@ -362,7 +355,6 @@ export default function TransactionsScreen() {
               onTogglePaidTxn={(txn, group, isPaidForPeriod) => {
                 handleTogglePaidTxn(txn, group, isPaidForPeriod);
               }}
-              onToggleSubscriptionTxn={handleToggleSubscriptionTxn}
             />
           </ScrollView>
         )}
