@@ -91,11 +91,11 @@ export function TransactionItem({
             {format(new Date(transaction.transaction_date), DATE_FORMAT)}
           </Text>
           <Text className="text-slate-400 text-xs">{transaction.category}</Text>
-          {isSubscription && (
+          {/* {isSubscription && (
             <Text className="text-teal-300/80 text-xs">
               Repeats every statement until marked inactive.
             </Text>
-          )}
+          )} */}
         </View>
 
         <View className="items-end gap-1">
@@ -133,12 +133,12 @@ export function TransactionItem({
               <Badge label={savingsLabel} variant={savingsVariant} />
             )
           )}
-          {(transaction.is_installment || isSubscription) && effectivePaid && (
+          {/* {(transaction.is_installment || isSubscription) && effectivePaid && (
             <Badge label="This period paid ✓" variant="success" />
           )}
           {isSubscription && !effectivePaid && (
             <Badge label="This period due" variant={isOverdue ? "danger" : "warning"} />
-          )}
+          )} */}
         </View>
       </View>
 
