@@ -1,19 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { Session } from "@supabase/supabase-js";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/stores/auth.store";
 
 const REDIRECT_URI = "crediwise://google-auth";
 
-async function processOAuthCallback(url: string): Promise<void> {
+async function syncAuthSession(): Promise<Session | null> {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    throw error;
+  }
+
+  useAuthStore.getState().setAuth(session?.user ?? null, session);
+
+  return session;
+}
+
+async function processOAuthCallback(url: string): Promise<Session | null> {
   const parsedUrl = new URL(url);
 
   const code = parsedUrl.searchParams.get("code");
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(url);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) throw error;
-    return;
+    return syncAuthSession();
   }
 
   const hashParams = new URLSearchParams(parsedUrl.hash.replace(/^#/, ""));
@@ -33,12 +51,15 @@ async function processOAuthCallback(url: string): Promise<void> {
     refresh_token,
   });
   if (error) throw error;
+
+  return syncAuthSession();
 }
 
 export { processOAuthCallback };
 
 export function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const onGoogleSignIn = async () => {
     try {
@@ -64,7 +85,11 @@ export function GoogleSignInButton() {
 
       if (result.type !== "success") return;
 
-      await processOAuthCallback(result.url);
+      const session = await processOAuthCallback(result.url);
+
+      if (session?.user) {
+        router.replace("/(tabs)");
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Something went wrong.";
