@@ -98,7 +98,10 @@ export default function TransactionsScreen() {
           const { statementDate, billingDate, periodKey } = getBillingPeriod(
             currentDate, statDay, billDay
           );
-          if (statementDate > today) break;
+          if (statementDate > today) {
+            addToGroup(txn, card, statementDate, billingDate, periodKey);
+            break;
+          }
           addToGroup(txn, card, statementDate, billingDate, periodKey);
           currentDate = new Date(
             statementDate.getFullYear(),
