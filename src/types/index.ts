@@ -31,6 +31,9 @@ export interface Transaction {
   category: string;
   transaction_date: string;
   is_installment: boolean;
+  is_subscription: boolean;
+  subscription_active: boolean;
+  subscription_inactive_at: string | null;
   installment_months: number | null;
   monthly_amount: number | null;
   is_paid: boolean;
@@ -97,6 +100,9 @@ export interface AddTransactionInput {
   category: string;
   transaction_date: string;
   is_installment: boolean;
+  is_subscription: boolean;
+  subscription_active: boolean;
+  subscription_inactive_at: string | null;
   installment_months: number | null;
   monthly_amount: number | null;
 }

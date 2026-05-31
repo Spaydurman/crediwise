@@ -10,6 +10,7 @@ export function useTransactions(cardId?: string) {
     addTransaction,
     deleteTransaction,
     togglePaid,
+    setSubscriptionActive,
     toggleInstallmentPeriodPaid,
     markGroupPaid,
   } = useTransactionsStore();
@@ -78,6 +79,7 @@ export function useTransactions(cardId?: string) {
     addTransaction,
     deleteTransaction,
     togglePaid,
+    setSubscriptionActive,
     toggleInstallmentPeriodPaid,
     markGroupPaid,
     refetch: fetchTransactions,

@@ -5,11 +5,15 @@ import type { AddTransactionInput, Transaction } from "../types";
 
 function enrichTransactions(raw: Transaction[]): Transaction[] {
   return raw.map((t) => {
-    const totalSaved = t.savings?.reduce((sum, s) => sum + s.amount, 0) ?? 0;
+    const totalSaved = t.is_subscription
+      ? 0
+      : t.savings?.reduce((sum, s) => sum + s.amount, 0) ?? 0;
     // For installment transactions, track against monthly_amount; otherwise full amount
     const trackableAmount =
       t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount;
-    const remaining = Math.max(0, trackableAmount - totalSaved);
+    const remaining = t.is_subscription
+      ? trackableAmount
+      : Math.max(0, trackableAmount - totalSaved);
     const paid_periods_count = t.installment_payments?.length ?? 0;
     return {
       ...t,
@@ -36,6 +40,7 @@ interface TransactionsState {
   addTransaction: (input: AddTransactionInput) => Promise<Transaction>;
   deleteTransaction: (id: string) => Promise<void>;
   togglePaid: (id: string, isPaid: boolean) => Promise<void>;
+  setSubscriptionActive: (id: string, active: boolean) => Promise<void>;
   toggleInstallmentPeriodPaid: (transactionId: string, periodKey: string, paid: boolean) => Promise<void>;
   markGroupPaid: (regularIds: string[], installmentItems: { transactionId: string; periodKey: string }[]) => Promise<void>;
   reset: () => void;
@@ -100,6 +105,28 @@ export const useTransactionsStore = create<TransactionsState>((set) => ({
     const { data, error } = await supabase
       .from("transactions")
       .update({ is_paid: isPaid })
+      .eq("id", id)
+      .select(TRANSACTION_SELECT)
+      .single();
+
+    if (error) throw error;
+    const enriched = enrichTransactions([data as Transaction])[0];
+    set((state) => ({
+      transactions: state.transactions.map((t) =>
+        t.id === id ? enriched : t
+      ),
+    }));
+  },
+
+  setSubscriptionActive: async (id, active) => {
+    const inactiveAt = active ? null : new Date().toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .update({
+        subscription_active: active,
+        subscription_inactive_at: inactiveAt,
+      })
       .eq("id", id)
       .select(TRANSACTION_SELECT)
       .single();

@@ -1,4 +1,5 @@
 ﻿import { Ionicons } from "@expo/vector-icons";
+import { addMonths, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -24,6 +25,8 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { getBillingPeriod } from "@/lib/billing";
 import type { AddSavingInput, AddTransactionInput, Transaction } from "@/types";
 
+const MAX_RECURRING_PERIODS = 240;
+
 export default function TransactionsScreen() {
   const { cards } = useCards();
   const {
@@ -32,6 +35,7 @@ export default function TransactionsScreen() {
     addTransaction,
     deleteTransaction,
     togglePaid,
+    setSubscriptionActive,
     toggleInstallmentPeriodPaid,
     markGroupPaid,
   } = useTransactions();
@@ -90,7 +94,7 @@ export default function TransactionsScreen() {
         card.statement_date ??
         Math.max(1, Math.min(28, card.billing_cycle_date - 5));
       const billDay = card.billing_cycle_date;
-      const txDate = new Date(txn.transaction_date);
+      const txDate = parseISO(txn.transaction_date);
 
       if (txn.is_installment && txn.installment_months && txn.monthly_amount) {
         let currentDate = txDate;
@@ -109,6 +113,30 @@ export default function TransactionsScreen() {
             statementDate.getDate() + 1
           );
         }
+      } else if (txn.is_subscription) {
+        const inactiveAt = txn.subscription_inactive_at
+          ? parseISO(txn.subscription_inactive_at)
+          : null;
+        const stopDate = inactiveAt ?? today;
+
+        for (let i = 0; i < MAX_RECURRING_PERIODS; i++) {
+          const occurrenceDate = addMonths(txDate, i);
+          if (!txn.subscription_active && occurrenceDate > stopDate) {
+            break;
+          }
+
+          const { statementDate, billingDate, periodKey } = getBillingPeriod(
+            occurrenceDate,
+            statDay,
+            billDay
+          );
+
+          addToGroup(txn, card, statementDate, billingDate, periodKey);
+
+          if (txn.subscription_active && statementDate > today) {
+            break;
+          }
+        }
       } else {
         const { statementDate, billingDate, periodKey } = getBillingPeriod(
           txDate, statDay, billDay
@@ -126,7 +154,7 @@ export default function TransactionsScreen() {
 
   const isGroupFullyPaid = (g: BillingGroup) =>
     g.transactions.every((t) =>
-      t.is_installment
+      t.is_installment || t.is_subscription
         ? (t.installment_payments?.some((p) => p.period_key === g.periodKey) ?? false)
         : t.is_paid
     );
@@ -177,11 +205,16 @@ export default function TransactionsScreen() {
     group: BillingGroup,
     isPaidForPeriod: boolean
   ) => {
-    if (txn.is_installment) {
+    if (txn.is_installment || txn.is_subscription) {
       toggleInstallmentPeriodPaid(txn.id, group.periodKey, !isPaidForPeriod);
     } else {
       togglePaid(txn.id, !txn.is_paid);
     }
+  };
+
+  const handleToggleSubscriptionTxn = (txn: Transaction) => {
+    if (!txn.is_subscription) return;
+    void setSubscriptionActive(txn.id, !txn.subscription_active);
   };
 
   const handleDelete = async () => {
@@ -319,18 +352,17 @@ export default function TransactionsScreen() {
                 onTogglePaidTxn={(txn, isPaidForPeriod) =>
                   handleTogglePaidTxn(txn, group, isPaidForPeriod)
                 }
+                onToggleSubscriptionTxn={handleToggleSubscriptionTxn}
               />
             ))}
             <PaidStatementsSection
               groups={paidStatements}
               onPressTxn={(txn) => setSavingTarget(txn)}
               onDeleteTxn={(txn) => setDeleteTarget(txn)}
-              onTogglePaidTxn={(txn, isPaidForPeriod) => {
-                const group = paidStatements.find((g) =>
-                  g.transactions.some((t) => t.id === txn.id)
-                );
-                if (group) handleTogglePaidTxn(txn, group, isPaidForPeriod);
+              onTogglePaidTxn={(txn, group, isPaidForPeriod) => {
+                handleTogglePaidTxn(txn, group, isPaidForPeriod);
               }}
+              onToggleSubscriptionTxn={handleToggleSubscriptionTxn}
             />
           </ScrollView>
         )}

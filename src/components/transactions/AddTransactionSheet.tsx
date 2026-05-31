@@ -30,8 +30,11 @@ interface TransactionFormValues {
   category: string;
   transaction_date: string;
   is_installment: boolean;
+  is_subscription: boolean;
   installment_months: number;
 }
+
+const DEFAULT_INSTALLMENT_MONTHS = 6;
 
 export function AddTransactionSheet({
   visible,
@@ -59,13 +62,15 @@ export function AddTransactionSheet({
       category: TRANSACTION_CATEGORIES[0],
       transaction_date: today,
       is_installment: false,
-      installment_months: 6,
+      is_subscription: false,
+      installment_months: DEFAULT_INSTALLMENT_MONTHS,
     },
   });
 
   const selectedCardId = watch("card_id");
   const selectedCategory = watch("category");
   const isInstallment = watch("is_installment");
+  const isSubscription = watch("is_subscription");
   const installmentMonths = watch("installment_months");
   const amountStr = watch("amount");
 
@@ -84,9 +89,17 @@ export function AddTransactionSheet({
         amount: parseFloat(values.amount),
         category: values.category,
         transaction_date: values.transaction_date,
-        is_installment: values.is_installment,
-        installment_months: values.is_installment ? values.installment_months : null,
-        monthly_amount: values.is_installment && values.installment_months > 0
+        is_installment: values.is_subscription ? false : values.is_installment,
+        is_subscription: values.is_subscription,
+        subscription_active: true,
+        subscription_inactive_at: null,
+        installment_months:
+          values.is_subscription || !values.is_installment
+            ? null
+            : values.installment_months,
+        monthly_amount: values.is_subscription || !values.is_installment
+          ? null
+          : values.installment_months > 0
           ? Math.round((parseFloat(values.amount) / values.installment_months) * 100) / 100
           : null,
       });
@@ -97,7 +110,8 @@ export function AddTransactionSheet({
         category: TRANSACTION_CATEGORIES[0],
         transaction_date: today,
         is_installment: false,
-        installment_months: 6,
+        is_subscription: false,
+        installment_months: DEFAULT_INSTALLMENT_MONTHS,
       });
       onClose();
     } catch {
@@ -245,13 +259,57 @@ export function AddTransactionSheet({
               render={({ field: { onChange, value } }) => (
                 <Switch
                   value={value}
-                  onValueChange={onChange}
+                  onValueChange={(nextValue) => {
+                    onChange(nextValue);
+                    if (nextValue) {
+                      setValue("is_subscription", false);
+                    }
+                  }}
                   trackColor={{ false: "#334155", true: "#6366f1" }}
                   thumbColor={value ? "#e0e7ff" : "#94a3b8"}
                 />
               )}
             />
           </View>
+
+          <View className="flex-row items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
+            <View className="flex-1 gap-0.5">
+              <Text className="text-slate-300 text-sm font-medium">
+                Subscription
+              </Text>
+              <Text className="text-slate-500 text-xs">
+                Repeat every statement until you mark it inactive
+              </Text>
+            </View>
+            <Controller
+              control={control}
+              name="is_subscription"
+              render={({ field: { onChange, value } }) => (
+                <Switch
+                  value={value}
+                  onValueChange={(nextValue) => {
+                    onChange(nextValue);
+                    if (nextValue) {
+                      setValue("is_installment", false);
+                    }
+                  }}
+                  trackColor={{ false: "#334155", true: "#0f766e" }}
+                  thumbColor={value ? "#ccfbf1" : "#94a3b8"}
+                />
+              )}
+            />
+          </View>
+
+          {isSubscription && (
+            <View className="bg-teal-950/50 border border-teal-800/60 rounded-xl px-4 py-3 gap-1">
+              <Text className="text-teal-300 text-sm font-medium">
+                Recurring charge enabled
+              </Text>
+              <Text className="text-teal-200/80 text-xs leading-5">
+                This transaction will appear in each new statement until you change its status to inactive from the Transactions tab.
+              </Text>
+            </View>
+          )}
 
           {/* Installment Term Picker */}
           {isInstallment && (
@@ -327,7 +385,7 @@ export function AddTransactionSheet({
             rules={{ required: "Date is required" }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Date (YYYY-MM-DD)"
+                label={isSubscription ? "First Charge Date (YYYY-MM-DD)" : "Date (YYYY-MM-DD)"}
                 placeholder={today}
                 value={value}
                 onChangeText={onChange}

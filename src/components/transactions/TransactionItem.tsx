@@ -12,6 +12,7 @@ interface TransactionItemProps {
   onPress?: () => void;
   onDelete?: () => void;
   onTogglePaid?: () => void;
+  onToggleSubscriptionActive?: () => void;
 }
 
 function getSavingsVariant(
@@ -41,7 +42,9 @@ export function TransactionItem({
   onPress,
   onDelete,
   onTogglePaid,
+  onToggleSubscriptionActive,
 }: TransactionItemProps) {
+  const isSubscription = transaction.is_subscription;
   const totalSaved = transaction.total_saved ?? 0;
   const remaining = transaction.remaining ?? transaction.amount;
   const isFullySaved = transaction.is_fully_saved ?? false;
@@ -70,6 +73,7 @@ export function TransactionItem({
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
       className={`bg-slate-900 border rounded-xl p-4 gap-3 active:bg-slate-800 ${
         isOverdue ? "border-red-500" : "border-slate-800"
       }`}
@@ -89,6 +93,11 @@ export function TransactionItem({
             {format(new Date(transaction.transaction_date), DATE_FORMAT)}
           </Text>
           <Text className="text-slate-400 text-xs">{transaction.category}</Text>
+          {isSubscription && (
+            <Text className="text-teal-300/80 text-xs">
+              Repeats every statement until marked inactive.
+            </Text>
+          )}
         </View>
 
         <View className="items-end gap-1">
@@ -110,43 +119,57 @@ export function TransactionItem({
               variant={paidPeriodsCount >= totalMonths ? "success" : paidPeriodsCount > 0 ? "warning" : "neutral"}
             />
           )}
-          {!transaction.is_installment && (
+          {isSubscription && (
+            <Badge label="Subscription" variant="info" />
+          )}
+          {isSubscription && (
+            <Badge
+              label={transaction.subscription_active ? "Active" : "Inactive"}
+              variant={transaction.subscription_active ? "success" : "neutral"}
+            />
+          )}
+          {!transaction.is_installment && !isSubscription && (
             effectivePaid ? (
               <Badge label="Paid ✓" variant="success" />
             ) : (
               <Badge label={savingsLabel} variant={savingsVariant} />
             )
           )}
-          {transaction.is_installment && effectivePaid && (
-            <Badge label="This mo. paid ✓" variant="success" />
+          {(transaction.is_installment || isSubscription) && effectivePaid && (
+            <Badge label="This period paid ✓" variant="success" />
+          )}
+          {isSubscription && !effectivePaid && (
+            <Badge label="This period due" variant={isOverdue ? "danger" : "warning"} />
           )}
         </View>
       </View>
 
-      <View className="gap-1.5">
-        <View className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-          <View
-            className={`h-full rounded-full ${
-              isFullySaved ? "bg-emerald-500" : totalSaved > 0 ? "bg-amber-500" : "bg-slate-700"
-            }`}
-            style={{ width: `${progressPercent}%` }}
-          />
-        </View>
-        <View className="flex-row justify-between">
-          <Text className="text-slate-500 text-xs">
-            Saved: {CURRENCY}
-            {totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
-          </Text>
-          {!isFullySaved && (
+      {!isSubscription && (
+        <View className="gap-1.5">
+          <View className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <View
+              className={`h-full rounded-full ${
+                isFullySaved ? "bg-emerald-500" : totalSaved > 0 ? "bg-amber-500" : "bg-slate-700"
+              }`}
+              style={{ width: `${progressPercent}%` }}
+            />
+          </View>
+          <View className="flex-row justify-between">
             <Text className="text-slate-500 text-xs">
-              Remaining: {CURRENCY}
-              {remaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+              Saved: {CURRENCY}
+              {totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
             </Text>
-          )}
+            {!isFullySaved && (
+              <Text className="text-slate-500 text-xs">
+                Remaining: {CURRENCY}
+                {remaining.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+              </Text>
+            )}
+          </View>
         </View>
-      </View>
+      )}
 
-      {onDelete && (
+      {(onDelete || onToggleSubscriptionActive || onTogglePaid) && (
         <View className="flex-row justify-end gap-3 border-t border-slate-800 pt-2">
           {onTogglePaid && (
             <Pressable
@@ -160,6 +183,25 @@ export function TransactionItem({
               />
               <Text className={`text-xs font-medium ${effectivePaid ? "text-amber-400" : "text-indigo-400"}`}>
                 {effectivePaid ? "Unpaid" : "Mark Paid"}
+              </Text>
+            </Pressable>
+          )}
+          {isSubscription && onToggleSubscriptionActive && (
+            <Pressable
+              onPress={onToggleSubscriptionActive}
+              className="flex-row items-center gap-1 px-3 py-1 rounded-lg active:bg-teal-900/30"
+            >
+              <Ionicons
+                name={transaction.subscription_active ? "pause-circle-outline" : "play-circle-outline"}
+                size={14}
+                color={transaction.subscription_active ? "#2dd4bf" : "#22c55e"}
+              />
+              <Text
+                className={`text-xs font-medium ${
+                  transaction.subscription_active ? "text-teal-400" : "text-green-400"
+                }`}
+              >
+                {transaction.subscription_active ? "Set Inactive" : "Set Active"}
               </Text>
             </Pressable>
           )}

@@ -10,7 +10,12 @@ interface PaidStatementsSectionProps {
   groups: BillingGroup[];
   onPressTxn: (txn: BillingGroup["transactions"][0]) => void;
   onDeleteTxn: (txn: BillingGroup["transactions"][0]) => void;
-  onTogglePaidTxn: (txn: BillingGroup["transactions"][0], isPaidForPeriod: boolean) => void;
+  onTogglePaidTxn: (
+    txn: BillingGroup["transactions"][0],
+    group: BillingGroup,
+    isPaidForPeriod: boolean
+  ) => void;
+  onToggleSubscriptionTxn: (txn: BillingGroup["transactions"][0]) => void;
 }
 
 interface PaidStatementCardProps {
@@ -18,6 +23,7 @@ interface PaidStatementCardProps {
   onPressTxn: PaidStatementsSectionProps["onPressTxn"];
   onDeleteTxn: PaidStatementsSectionProps["onDeleteTxn"];
   onTogglePaidTxn: PaidStatementsSectionProps["onTogglePaidTxn"];
+  onToggleSubscriptionTxn: PaidStatementsSectionProps["onToggleSubscriptionTxn"];
 }
 
 function PaidStatementCard({
@@ -25,8 +31,9 @@ function PaidStatementCard({
   onPressTxn,
   onDeleteTxn,
   onTogglePaidTxn,
+  onToggleSubscriptionTxn,
 }: PaidStatementCardProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const { itemCount, statementTotal, statementSaved, statementShortage } =
     getBillingGroupSummary(group);
 
@@ -57,9 +64,12 @@ function PaidStatementCard({
               transaction={txn}
               isOverdue={false}
               isPaidForPeriod={isPaidForPeriod}
-              onPress={() => onPressTxn(txn)}
+              onPress={txn.is_subscription ? undefined : () => onPressTxn(txn)}
               onDelete={() => onDeleteTxn(txn)}
-              onTogglePaid={() => onTogglePaidTxn(txn, isPaidForPeriod)}
+              onTogglePaid={() => onTogglePaidTxn(txn, group, isPaidForPeriod)}
+              onToggleSubscriptionActive={
+                txn.is_subscription ? () => onToggleSubscriptionTxn(txn) : undefined
+              }
             />
           );
         })}
@@ -72,6 +82,7 @@ export function PaidStatementsSection({
   onPressTxn,
   onDeleteTxn,
   onTogglePaidTxn,
+  onToggleSubscriptionTxn,
 }: PaidStatementsSectionProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -105,6 +116,7 @@ export function PaidStatementsSection({
             onPressTxn={onPressTxn}
             onDeleteTxn={onDeleteTxn}
             onTogglePaidTxn={onTogglePaidTxn}
+            onToggleSubscriptionTxn={onToggleSubscriptionTxn}
           />
         ))}
     </View>
