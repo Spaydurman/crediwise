@@ -3,6 +3,7 @@ import { addMonths, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   ScrollView,
@@ -11,11 +12,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AddSavingSheet } from "@/components/savings/AddSavingSheet";
-import { AddTransactionSheet } from "@/components/transactions/AddTransactionSheet";
+import {
+  AddTransactionSheet,
+  type AddTransactionInitialValues,
+} from "@/components/transactions/AddTransactionSheet";
 import { BillingGroupCard } from "@/components/transactions/BillingGroupCard";
 import { NotificationPopup } from "@/components/transactions/NotificationPopup";
 import { PaidStatementsSection } from "@/components/transactions/PaidStatementsSection";
 import type { BillingGroup } from "@/components/transactions/types";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CARD_COLOR_BG_MAP, CURRENCY } from "@/constants";
@@ -23,6 +28,7 @@ import { useCards } from "@/hooks/useCards";
 import { useSavings } from "@/hooks/useSavings";
 import { useTransactions } from "@/hooks/useTransactions";
 import { getBillingPeriod } from "@/lib/billing";
+import { scanReceipt, type ReceiptSource } from "@/lib/receiptOcr";
 import type { AddSavingInput, AddTransactionInput, Transaction } from "@/types";
 
 const MAX_RECURRING_PERIODS = 240;
@@ -42,6 +48,10 @@ export default function TransactionsScreen() {
 
   const [selectedCardFilter, setSelectedCardFilter] = useState<string | null>(null);
   const [showAddTxn, setShowAddTxn] = useState(false);
+  const [addInitialValues, setAddInitialValues] =
+    useState<AddTransactionInitialValues | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [showScanSheet, setShowScanSheet] = useState(false);
   const [savingTarget, setSavingTarget] = useState<Transaction | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -223,6 +233,37 @@ export default function TransactionsScreen() {
     }
   };
 
+  const openManualAdd = () => {
+    setAddInitialValues(null);
+    setShowAddTxn(true);
+  };
+
+  const runScan = async (source: ReceiptSource) => {
+    setShowScanSheet(false);
+    try {
+      setScanning(true);
+      const parsed = await scanReceipt(source);
+      if (!parsed) return;
+      setAddInitialValues({
+        description: parsed.description ?? undefined,
+        amount: parsed.amount != null ? parsed.amount.toFixed(2) : undefined,
+        transaction_date: parsed.transaction_date ?? undefined,
+      });
+      setShowAddTxn(true);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to scan receipt.";
+      Alert.alert("Scan failed", message);
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleScanPress = () => {
+    if (scanning) return;
+    setShowScanSheet(true);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <View className="flex-1">
@@ -247,7 +288,26 @@ export default function TransactionsScreen() {
               </Pressable>
             )}
             <Pressable
-              onPress={() => setShowAddTxn(true)}
+              onPress={handleScanPress}
+              disabled={scanning}
+              accessibilityLabel="Scan receipt"
+              className={`flex-row items-center gap-2 px-4 py-2.5 rounded-xl border ${
+                scanning
+                  ? "bg-teal-900/40 border-teal-800"
+                  : "bg-teal-700 border-teal-600 active:bg-teal-800"
+              }`}
+            >
+              {scanning ? (
+                <ActivityIndicator size={14} color="white" />
+              ) : (
+                <Ionicons name="scan-outline" size={18} color="white" />
+              )}
+              <Text className="text-white text-sm font-semibold">
+                {scanning ? "Scanning" : "Scan"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={openManualAdd}
               className="flex-row items-center gap-2 bg-indigo-600 px-4 py-2.5 rounded-xl active:bg-indigo-700"
             >
               <Ionicons name="add" size={18} color="white" />
@@ -370,11 +430,15 @@ export default function TransactionsScreen() {
 
       <AddTransactionSheet
         visible={showAddTxn}
-        onClose={() => setShowAddTxn(false)}
+        onClose={() => {
+          setShowAddTxn(false);
+          setAddInitialValues(null);
+        }}
         onAdd={async (data: AddTransactionInput) => {
           await addTransaction(data);
         }}
         cards={cards}
+        initialValues={addInitialValues}
       />
       <AddSavingSheet
         visible={savingTarget !== null}
@@ -391,6 +455,58 @@ export default function TransactionsScreen() {
         onCancel={() => setDeleteTarget(null)}
         loading={deleting}
       />
+      <BottomSheet
+        visible={showScanSheet}
+        onClose={() => setShowScanSheet(false)}
+        title="Scan Receipt"
+        snapHeight={360}
+      >
+        <View className="px-5 pt-4 pb-5 gap-3">
+          <Text className="text-slate-400 text-sm leading-5">
+            Capture a new photo or choose one from your library. We&apos;ll prefill
+            the merchant, amount, and date from the receipt.
+          </Text>
+
+          <Pressable
+            onPress={() => runScan("camera")}
+            className="flex-row items-center gap-3 rounded-2xl border border-teal-700/60 bg-teal-600/15 p-4 active:bg-teal-600/25"
+          >
+            <View className="h-11 w-11 items-center justify-center rounded-xl bg-teal-600">
+              <Ionicons name="camera-outline" size={22} color="white" />
+            </View>
+            <View className="flex-1 gap-0.5">
+              <Text className="text-base font-semibold text-white">Use Camera</Text>
+              <Text className="text-xs text-slate-400">
+                Take a fresh photo of your receipt
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+          </Pressable>
+
+          <Pressable
+            onPress={() => runScan("library")}
+            className="flex-row items-center gap-3 rounded-2xl border border-indigo-700/60 bg-indigo-600/15 p-4 active:bg-indigo-600/25"
+          >
+            <View className="h-11 w-11 items-center justify-center rounded-xl bg-indigo-600">
+              <Ionicons name="images-outline" size={22} color="white" />
+            </View>
+            <View className="flex-1 gap-0.5">
+              <Text className="text-base font-semibold text-white">Choose from Library</Text>
+              <Text className="text-xs text-slate-400">
+                Pick an existing receipt image
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+          </Pressable>
+
+          <Pressable
+            onPress={() => setShowScanSheet(false)}
+            className="mt-1 items-center py-3"
+          >
+            <Text className="text-sm font-medium text-slate-400">Cancel</Text>
+          </Pressable>
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }

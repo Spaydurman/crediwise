@@ -57,7 +57,14 @@
           "experimentalLauncherActivity": false
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CrediWise needs photo library access to scan receipts.",
+          "cameraPermission": "CrediWise needs camera access to scan receipts."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

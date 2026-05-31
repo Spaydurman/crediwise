@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Alert,
@@ -15,12 +15,20 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { CURRENCY } from "../../constants";
 
+export interface AddTransactionInitialValues {
+  description?: string;
+  amount?: string;
+  category?: string;
+  transaction_date?: string;
+}
+
 interface AddTransactionSheetProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (data: AddTransactionInput) => Promise<void>;
   cards: CreditCard[];
   defaultCardId?: string;
+  initialValues?: AddTransactionInitialValues | null;
 }
 
 interface TransactionFormValues {
@@ -42,6 +50,7 @@ export function AddTransactionSheet({
   onAdd,
   cards,
   defaultCardId,
+  initialValues,
 }: AddTransactionSheetProps) {
   const [submitting, setSubmitting] = useState(false);
 
@@ -66,6 +75,21 @@ export function AddTransactionSheet({
       installment_months: DEFAULT_INSTALLMENT_MONTHS,
     },
   });
+
+  useEffect(() => {
+    if (!visible) return;
+    reset({
+      card_id: defaultCardId ?? cards[0]?.id ?? "",
+      description: initialValues?.description ?? "",
+      amount: initialValues?.amount ?? "",
+      category: initialValues?.category ?? TRANSACTION_CATEGORIES[0],
+      transaction_date: initialValues?.transaction_date ?? today,
+      is_installment: false,
+      is_subscription: false,
+      installment_months: DEFAULT_INSTALLMENT_MONTHS,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, initialValues]);
 
   const selectedCardId = watch("card_id");
   const selectedCategory = watch("category");
