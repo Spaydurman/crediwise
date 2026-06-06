@@ -6,7 +6,6 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as WebBrowser from "expo-web-browser";
-import { useColorScheme } from "nativewind";
 import { getThemeColors } from "@/constants/theme";
 import { useAuthStore } from "@/stores/auth.store";
 import { useThemeStore } from "@/stores/theme.store";
@@ -18,18 +17,12 @@ export default function RootLayout() {
   const initialized = useAuthStore((s) => s.initialized);
   const themeMode = useThemeStore((s) => s.themeMode);
   const themeHydrated = useThemeStore((s) => s.hydrated);
-  const { setColorScheme } = useColorScheme();
   const themeColors = getThemeColors(themeMode);
 
   useEffect(() => {
     const unsubscribe = initialize();
     return unsubscribe;
   }, [initialize]);
-
-  useEffect(() => {
-    if (!themeHydrated) return;
-    setColorScheme(themeMode);
-  }, [setColorScheme, themeHydrated, themeMode]);
 
   if (!initialized || !themeHydrated) {
     return (
