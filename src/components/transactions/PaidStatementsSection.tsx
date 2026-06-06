@@ -35,7 +35,7 @@ function PaidStatementCard({
     getBillingGroupSummary(group);
 
   return (
-    <View className="gap-1.5 opacity-60">
+    <View className="gap-1.5">
       <BillingGroupHeader
         group={group}
         itemCount={itemCount}
@@ -85,13 +85,13 @@ export function PaidStatementsSection({
     <View className="gap-3">
       <Pressable
         onPress={() => setExpanded((v) => !v)}
-        className="flex-row items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 active:bg-slate-800"
+        className="flex-row items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 active:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:active:bg-slate-800"
       >
         <View className="flex-row items-center gap-2">
-          <Ionicons name="checkmark-done-circle" size={16} color="#34d399" />
-          <Text className="text-slate-300 text-sm font-semibold">Paid Statements</Text>
-          <View className="bg-emerald-900/60 border border-emerald-700 rounded-full px-2 py-0.5">
-            <Text className="text-emerald-400 text-xs font-semibold">{groups.length}</Text>
+          <Ionicons name="checkmark-done-circle" size={16} color="#047857" />
+          <Text className="text-slate-800 dark:text-slate-300 text-sm font-semibold">Paid Statements</Text>
+          <View className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/60 dark:border-emerald-700 rounded-full px-2 py-0.5">
+            <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold">{groups.length}</Text>
           </View>
         </View>
         <Ionicons

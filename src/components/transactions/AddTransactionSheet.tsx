@@ -158,7 +158,7 @@ export function AddTransactionSheet({
       >
         <View className="gap-4 pb-8">
           <View className="gap-1.5">
-            <Text className="text-slate-300 text-sm font-medium">
+            <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium">
               Credit Card
             </Text>
             <ScrollView
@@ -175,16 +175,16 @@ export function AddTransactionSheet({
                     px-4 py-2.5 rounded-xl border
                     ${
                       selectedCardId === card.id
-                        ? "bg-indigo-600 border-indigo-500"
-                        : "bg-slate-800 border-slate-700"
+                        ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-600 dark:border-indigo-500"
+                        : "bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700"
                     }
                   `}
                 >
                   <Text
                     className={`text-xs font-semibold ${
                       selectedCardId === card.id
-                        ? "text-white"
-                        : "text-slate-300"
+                        ? "text-indigo-700 dark:text-white"
+                        : "text-slate-700 dark:text-slate-300"
                     }`}
                   >
                     {card.bank}
@@ -192,7 +192,7 @@ export function AddTransactionSheet({
                   <Text
                     className={`text-xs ${
                       selectedCardId === card.id
-                        ? "text-indigo-200"
+                        ? "text-indigo-500 dark:text-indigo-200"
                         : "text-slate-500"
                     }`}
                   >
@@ -240,7 +240,7 @@ export function AddTransactionSheet({
           />
 
           <View className="gap-1.5">
-            <Text className="text-slate-300 text-sm font-medium">Category</Text>
+            <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium">Category</Text>
             <View className="flex-row flex-wrap gap-2">
               {TRANSACTION_CATEGORIES.map((cat) => (
                 <Pressable
@@ -250,14 +250,16 @@ export function AddTransactionSheet({
                     px-3 py-1.5 rounded-lg border
                     ${
                       selectedCategory === cat
-                        ? "bg-indigo-600 border-indigo-500"
-                        : "bg-slate-800 border-slate-700"
+                        ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-600 dark:border-indigo-500"
+                        : "bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700"
                     }
                   `}
                 >
                   <Text
                     className={`text-xs font-medium ${
-                      selectedCategory === cat ? "text-white" : "text-slate-400"
+                      selectedCategory === cat
+                        ? "text-indigo-700 dark:text-white"
+                        : "text-slate-700 dark:text-slate-400"
                     }`}
                   >
                     {cat}
@@ -268,9 +270,9 @@ export function AddTransactionSheet({
           </View>
 
           {/* Installment Toggle */}
-          <View className="flex-row items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
+          <View className="flex-row items-center justify-between bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl px-4 py-3">
             <View className="flex-1 gap-0.5">
-              <Text className="text-slate-300 text-sm font-medium">
+              <Text className="text-slate-800 dark:text-slate-300 text-sm font-medium">
                 Installment / Pay Later
               </Text>
               <Text className="text-slate-500 text-xs">
@@ -289,16 +291,16 @@ export function AddTransactionSheet({
                       setValue("is_subscription", false);
                     }
                   }}
-                  trackColor={{ false: "#334155", true: "#6366f1" }}
-                  thumbColor={value ? "#e0e7ff" : "#94a3b8"}
+                  trackColor={{ false: "#cbd5e1", true: "#818cf8" }}
+                  thumbColor={value ? "#eef2ff" : "#ffffff"}
                 />
               )}
             />
           </View>
 
-          <View className="flex-row items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
+          <View className="flex-row items-center justify-between bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl px-4 py-3">
             <View className="flex-1 gap-0.5">
-              <Text className="text-slate-300 text-sm font-medium">
+              <Text className="text-slate-800 dark:text-slate-300 text-sm font-medium">
                 Subscription
               </Text>
               <Text className="text-slate-500 text-xs">
@@ -317,19 +319,19 @@ export function AddTransactionSheet({
                       setValue("is_installment", false);
                     }
                   }}
-                  trackColor={{ false: "#334155", true: "#0f766e" }}
-                  thumbColor={value ? "#ccfbf1" : "#94a3b8"}
+                  trackColor={{ false: "#cbd5e1", true: "#14b8a6" }}
+                  thumbColor={value ? "#f0fdfa" : "#ffffff"}
                 />
               )}
             />
           </View>
 
           {isSubscription && (
-            <View className="bg-teal-950/50 border border-teal-800/60 rounded-xl px-4 py-3 gap-1">
-              <Text className="text-teal-300 text-sm font-medium">
+            <View className="bg-teal-50 border border-teal-200 dark:bg-teal-950/50 dark:border-teal-800/60 rounded-xl px-4 py-3 gap-1">
+              <Text className="text-teal-800 dark:text-teal-300 text-sm font-medium">
                 Recurring charge enabled
               </Text>
-              <Text className="text-teal-200/80 text-xs leading-5">
+              <Text className="text-teal-700 dark:text-teal-200/80 text-xs leading-5">
                 This transaction will appear in each new statement until you change its status to inactive from the Transactions tab.
               </Text>
             </View>
@@ -338,7 +340,7 @@ export function AddTransactionSheet({
           {/* Installment Term Picker */}
           {isInstallment && (
             <View className="gap-2">
-              <Text className="text-slate-300 text-sm font-medium">
+              <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium">
                 Number of Months
               </Text>
               <Controller
@@ -359,21 +361,25 @@ export function AddTransactionSheet({
                           px-4 py-2.5 rounded-xl border min-w-[56px] items-center
                           ${
                             value === term
-                              ? "bg-indigo-600 border-indigo-500"
-                              : "bg-slate-800 border-slate-700"
+                              ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-600 dark:border-indigo-500"
+                              : "bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700"
                           }
                         `}
                       >
                         <Text
                           className={`text-sm font-bold ${
-                            value === term ? "text-white" : "text-slate-300"
+                            value === term
+                              ? "text-indigo-700 dark:text-white"
+                              : "text-slate-700 dark:text-slate-300"
                           }`}
                         >
                           {term}
                         </Text>
                         <Text
                           className={`text-xs ${
-                            value === term ? "text-indigo-200" : "text-slate-500"
+                            value === term
+                              ? "text-indigo-500 dark:text-indigo-200"
+                              : "text-slate-500"
                           }`}
                         >
                           mos
@@ -386,11 +392,11 @@ export function AddTransactionSheet({
 
               {/* Monthly Amount Preview */}
               {monthlyAmount !== null && parsedAmount > 0 && (
-                <View className="bg-indigo-950/50 border border-indigo-800/50 rounded-xl p-3 flex-row items-center justify-between">
-                  <Text className="text-indigo-300 text-sm">
+                <View className="bg-indigo-50 border border-indigo-200 dark:bg-indigo-950/50 dark:border-indigo-800/50 rounded-xl p-3 flex-row items-center justify-between">
+                  <Text className="text-indigo-700 dark:text-indigo-300 text-sm">
                     Monthly Payment
                   </Text>
-                  <Text className="text-indigo-400 text-base font-bold">
+                  <Text className="text-indigo-700 dark:text-indigo-400 text-base font-bold">
                     {CURRENCY}
                     {monthlyAmount.toLocaleString("en-PH", {
                       minimumFractionDigits: 2,

@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, Text } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/auth.store";
+import { useThemeStore } from "@/stores/theme.store";
 
 const REDIRECT_URI = "crediwise://google-auth";
 
@@ -60,6 +61,7 @@ export { processOAuthCallback };
 export function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
 
   const onGoogleSignIn = async () => {
     try {
@@ -105,17 +107,22 @@ export function GoogleSignInButton() {
       disabled={loading}
       className={`
         flex-row items-center justify-center gap-3
-        w-full rounded-xl border border-slate-700 bg-slate-800
-        px-6 py-4 active:bg-slate-700
+        w-full rounded-xl border border-slate-300 bg-white
+        px-6 py-4 active:bg-slate-100
+        dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700
         ${loading ? "opacity-50" : ""}
       `}
     >
       {loading ? (
-        <ActivityIndicator size="small" color="#94a3b8" />
+        <ActivityIndicator size="small" color={isDark ? "#94a3b8" : "#64748b"} />
       ) : (
-        <Ionicons name="logo-google" size={20} color="#e2e8f0" />
+        <Ionicons
+          name="logo-google"
+          size={20}
+          color={isDark ? "#e2e8f0" : "#334155"}
+        />
       )}
-      <Text className="text-lg font-semibold text-slate-100">
+      <Text className="text-lg font-semibold text-slate-900 dark:text-slate-100">
         {loading ? "Connecting..." : "Continue with Google"}
       </Text>
     </Pressable>

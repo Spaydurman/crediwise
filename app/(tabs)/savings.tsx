@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CURRENCY, DATE_FORMAT } from "@/constants";
 import { useSavings } from "@/hooks/useSavings";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useThemeStore } from "@/stores/theme.store";
 import type { AddSavingInput, Saving, Transaction } from "@/types";
 
 function SavingHistoryItem({
@@ -24,16 +25,17 @@ function SavingHistoryItem({
   saving: Saving;
   onDelete: () => void;
 }) {
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
   return (
-    <View className="bg-slate-900 border border-slate-800 rounded-xl p-4 gap-2.5">
+    <View className="bg-white border border-slate-200 rounded-xl p-4 gap-2.5 dark:bg-slate-900 dark:border-slate-800">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-row items-center gap-3 flex-1">
-          <View className="w-9 h-9 rounded-xl bg-emerald-900/60 border border-emerald-700/50 items-center justify-center flex-shrink-0">
-            <Ionicons name="wallet-outline" size={16} color="#34d399" />
+          <View className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/60 dark:border-emerald-700/50 items-center justify-center flex-shrink-0">
+            <Ionicons name="wallet-outline" size={16} color={isDark ? "#34d399" : "#047857"} />
           </View>
           <View className="flex-1 gap-0.5">
             <Text
-              className="text-white text-sm font-semibold"
+              className="text-slate-950 dark:text-white text-sm font-semibold"
               numberOfLines={1}
             >
               {saving.transaction?.description ?? "Transaction"}
@@ -42,23 +44,23 @@ function SavingHistoryItem({
               {format(new Date(saving.saved_date), DATE_FORMAT)}
             </Text>
             {saving.notes ? (
-              <Text className="text-slate-400 text-xs italic" numberOfLines={1}>
+              <Text className="text-slate-600 dark:text-slate-400 text-xs italic" numberOfLines={1}>
                 {saving.notes}
               </Text>
             ) : null}
           </View>
         </View>
         <View className="items-end gap-1">
-          <Text className="text-emerald-400 font-bold text-base">
+          <Text className="text-emerald-700 dark:text-emerald-400 font-bold text-base">
             +{CURRENCY}
             {saving.amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
           </Text>
           <Pressable
             onPress={onDelete}
-            className="flex-row items-center gap-1 px-2 py-1 rounded-lg active:bg-red-900/30"
+            className="flex-row items-center gap-1 px-2 py-1 rounded-lg active:bg-red-50 dark:active:bg-red-900/30"
           >
-            <Ionicons name="trash-outline" size={12} color="#f87171" />
-            <Text className="text-red-400 text-xs">Remove</Text>
+            <Ionicons name="trash-outline" size={12} color={isDark ? "#f87171" : "#dc2626"} />
+            <Text className="text-red-700 dark:text-red-400 text-xs">Remove</Text>
           </Pressable>
         </View>
       </View>
@@ -67,6 +69,7 @@ function SavingHistoryItem({
 }
 
 export default function SavingsScreen() {
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
   const { savings, loading, totalSaved, deleteSaving, addSaving } =
     useSavings();
   const { transactions } = useTransactions();
@@ -103,46 +106,46 @@ export default function SavingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="flex-1">
         <View className="px-5 pt-4 pb-3">
-          <Text className="text-white text-2xl font-bold">Savings Tracker</Text>
-          <Text className="text-slate-400 text-sm mt-0.5">
+          <Text className="text-slate-950 dark:text-white text-2xl font-bold">Savings Tracker</Text>
+          <Text className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
             Track money you've set aside for each transaction
           </Text>
         </View>
 
         <View className="px-5 pb-4">
-          <View className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex-row gap-4">
+          <View className="bg-white border border-slate-200 rounded-2xl p-4 flex-row gap-4 dark:bg-slate-900 dark:border-slate-800">
             <View className="flex-1 items-center gap-1">
-              <View className="w-10 h-10 bg-emerald-900/50 rounded-xl border border-emerald-700/50 items-center justify-center">
-                <Ionicons name="checkmark-circle" size={20} color="#34d399" />
+              <View className="w-10 h-10 bg-emerald-50 border border-emerald-200 rounded-xl dark:bg-emerald-900/50 dark:border-emerald-700/50 items-center justify-center">
+                <Ionicons name="checkmark-circle" size={20} color={isDark ? "#34d399" : "#047857"} />
               </View>
-              <Text className="text-emerald-400 text-lg font-bold">
+              <Text className="text-emerald-700 dark:text-emerald-400 text-lg font-bold">
                 {fullyPaidTransactions.length}
               </Text>
               <Text className="text-slate-500 text-xs text-center">
                 Fully Saved
               </Text>
             </View>
-            <View className="w-px bg-slate-800" />
+            <View className="w-px bg-slate-200 dark:bg-slate-800" />
             <View className="flex-1 items-center gap-1">
-              <View className="w-10 h-10 bg-amber-900/50 rounded-xl border border-amber-700/50 items-center justify-center">
-                <Ionicons name="time" size={20} color="#fbbf24" />
+              <View className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl dark:bg-amber-900/50 dark:border-amber-700/50 items-center justify-center">
+                <Ionicons name="time" size={20} color={isDark ? "#fbbf24" : "#a16207"} />
               </View>
-              <Text className="text-amber-400 text-lg font-bold">
+              <Text className="text-amber-700 dark:text-amber-400 text-lg font-bold">
                 {unsavedTransactions.length}
               </Text>
               <Text className="text-slate-500 text-xs text-center">
                 In Progress
               </Text>
             </View>
-            <View className="w-px bg-slate-800" />
+            <View className="w-px bg-slate-200 dark:bg-slate-800" />
             <View className="flex-1 items-center gap-1">
-              <View className="w-10 h-10 bg-indigo-900/50 rounded-xl border border-indigo-700/50 items-center justify-center">
-                <Ionicons name="wallet" size={20} color="#818cf8" />
+              <View className="w-10 h-10 bg-indigo-50 border border-indigo-200 rounded-xl dark:bg-indigo-900/50 dark:border-indigo-700/50 items-center justify-center">
+                <Ionicons name="wallet" size={20} color={isDark ? "#818cf8" : "#4338ca"} />
               </View>
-              <Text className="text-indigo-400 text-lg font-bold">
+              <Text className="text-indigo-700 dark:text-indigo-400 text-lg font-bold">
                 {CURRENCY}
                 {totalSaved.toLocaleString("en-PH", { minimumFractionDigits: 0 })}
               </Text>
@@ -155,7 +158,7 @@ export default function SavingsScreen() {
 
         {unsavedTransactions.length > 0 && (
           <View className="px-5 pb-3">
-            <Text className="text-white text-sm font-bold mb-2">
+            <Text className="text-slate-950 dark:text-white text-sm font-bold mb-2">
               Still Need to Set Aside
             </Text>
             <FlatList
@@ -167,24 +170,24 @@ export default function SavingsScreen() {
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => openSavingSheet(item)}
-                  className="bg-slate-900 border border-amber-700/40 rounded-xl p-3 w-44 gap-1.5 active:bg-slate-800"
+                  className="bg-white border border-amber-200 rounded-xl p-3 w-44 gap-1.5 active:bg-amber-50 dark:bg-slate-900 dark:border-amber-700/40 dark:active:bg-slate-800"
                 >
-                  <Text className="text-white text-xs font-semibold" numberOfLines={1}>
+                  <Text className="text-slate-950 dark:text-white text-xs font-semibold" numberOfLines={1}>
                     {item.description}
                   </Text>
                   <Text className="text-slate-500 text-xs">
                     {item.credit_card?.bank}
                   </Text>
                   <View className="gap-0.5">
-                    <Text className="text-amber-400 text-sm font-bold">
+                    <Text className="text-amber-700 dark:text-amber-400 text-sm font-bold">
                       {CURRENCY}
                       {(item.remaining ?? item.amount).toLocaleString("en-PH", {
                         minimumFractionDigits: 2,
                       })}
                     </Text>
-                    <Text className="text-slate-600 text-xs">remaining</Text>
+                    <Text className="text-slate-500 dark:text-slate-600 text-xs">remaining</Text>
                   </View>
-                  <View className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                  <View className="h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                     <View
                       className="h-full bg-amber-500 rounded-full"
                       style={{
@@ -196,8 +199,8 @@ export default function SavingsScreen() {
                     />
                   </View>
                   <View className="flex-row items-center justify-center gap-1 mt-1">
-                    <Ionicons name="add-circle-outline" size={14} color="#6366f1" />
-                    <Text className="text-indigo-400 text-xs font-semibold">
+                    <Ionicons name="add-circle-outline" size={14} color={isDark ? "#818cf8" : "#4338ca"} />
+                    <Text className="text-indigo-700 dark:text-indigo-400 text-xs font-semibold">
                       Save
                     </Text>
                   </View>
@@ -208,16 +211,16 @@ export default function SavingsScreen() {
         )}
 
         <View className="px-5 pb-2 flex-row items-center justify-between">
-          <Text className="text-white text-sm font-bold">Savings History</Text>
+          <Text className="text-slate-950 dark:text-white text-sm font-bold">Savings History</Text>
           <Pressable
             onPress={() => {
               setSelectedTransaction(null);
               setShowAddSheet(true);
             }}
-            className="flex-row items-center gap-1 bg-indigo-600 px-3 py-1.5 rounded-xl active:bg-indigo-700"
+            className="flex-row items-center gap-1 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl active:bg-indigo-100 dark:bg-indigo-600 dark:border-indigo-500 dark:active:bg-indigo-700"
           >
-            <Ionicons name="add" size={14} color="white" />
-            <Text className="text-white text-xs font-semibold">Record</Text>
+            <Ionicons name="add" size={14} color={isDark ? "white" : "#4338ca"} />
+            <Text className="text-indigo-700 dark:text-white text-xs font-semibold">Record</Text>
           </Pressable>
         </View>
 

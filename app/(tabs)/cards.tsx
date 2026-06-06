@@ -16,9 +16,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CURRENCY } from "@/constants";
 import { useCards } from "@/hooks/useCards";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useThemeStore } from "@/stores/theme.store";
 import type { CreditCard } from "@/types";
 
 export default function CardsScreen() {
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
   const { cards, loading, addCard, updateCard, deleteCard } = useCards();
   const { transactions } = useTransactions();
   const [showAddSheet, setShowAddSheet] = useState(false);
@@ -62,16 +64,16 @@ export default function CardsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="flex-1">
         <View className="px-5 pt-4 pb-3 flex-row items-center justify-between">
-          <Text className="text-white text-2xl font-bold">My Cards</Text>
+          <Text className="text-slate-950 dark:text-white text-2xl font-bold">My Cards</Text>
           <Pressable
             onPress={() => setShowAddSheet(true)}
-            className="flex-row items-center gap-2 bg-indigo-600 px-4 py-2.5 rounded-xl active:bg-indigo-700"
+            className="flex-row items-center gap-2 bg-indigo-50 border border-indigo-200 px-4 py-2.5 rounded-xl active:bg-indigo-100 dark:bg-indigo-600 dark:border-indigo-500 dark:active:bg-indigo-700"
           >
-            <Ionicons name="add" size={18} color="white" />
-            <Text className="text-white text-sm font-semibold">Add Card</Text>
+            <Ionicons name="add" size={18} color={isDark ? "white" : "#4338ca"} />
+            <Text className="text-indigo-700 dark:text-white text-sm font-semibold">Add Card</Text>
           </Pressable>
         </View>
 
@@ -104,27 +106,27 @@ export default function CardsScreen() {
                   <CreditCardVisual card={card} totalSpending={spending} />
 
                   <View className="flex-row gap-3">
-                    <View className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 gap-0.5">
+                    <View className="flex-1 bg-white border border-slate-200 rounded-xl p-3 gap-0.5 dark:bg-slate-900 dark:border-slate-800">
                       <Text className="text-slate-500 text-xs">Saved</Text>
-                      <Text className="text-emerald-400 text-sm font-bold">
+                      <Text className="text-emerald-700 dark:text-emerald-400 text-sm font-bold">
                         {CURRENCY}
                         {saved.toLocaleString("en-PH", {
                           minimumFractionDigits: 2,
                         })}
                       </Text>
                     </View>
-                    <View className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 gap-0.5">
+                    <View className="flex-1 bg-white border border-slate-200 rounded-xl p-3 gap-0.5 dark:bg-slate-900 dark:border-slate-800">
                       <Text className="text-slate-500 text-xs">Shortage</Text>
-                      <Text className="text-amber-400 text-sm font-bold">
+                      <Text className="text-amber-700 dark:text-amber-400 text-sm font-bold">
                         {CURRENCY}
                         {remaining.toLocaleString("en-PH", {
                           minimumFractionDigits: 2,
                         })}
                       </Text>
                     </View>
-                    <View className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 gap-0.5">
+                    <View className="flex-1 bg-white border border-slate-200 rounded-xl p-3 gap-0.5 dark:bg-slate-900 dark:border-slate-800">
                       <Text className="text-slate-500 text-xs">Transactions</Text>
-                      <Text className="text-white text-sm font-bold">
+                      <Text className="text-slate-950 dark:text-white text-sm font-bold">
                         {txnCount}
                       </Text>
                     </View>
@@ -133,19 +135,19 @@ export default function CardsScreen() {
                   <View className="flex-row gap-3">
                     <Pressable
                       onPress={() => setEditCard(card)}
-                      className="flex-1 flex-row items-center justify-center gap-2 bg-slate-800 border border-slate-700 rounded-xl py-2.5 active:bg-slate-700"
+                      className="flex-1 flex-row items-center justify-center gap-2 bg-white border border-slate-200 rounded-xl py-2.5 active:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:active:bg-slate-700"
                     >
-                      <Ionicons name="pencil-outline" size={16} color="#6366f1" />
-                      <Text className="text-indigo-400 text-sm font-semibold">
+                      <Ionicons name="pencil-outline" size={16} color={isDark ? "#818cf8" : "#4338ca"} />
+                      <Text className="text-indigo-700 dark:text-indigo-400 text-sm font-semibold">
                         Edit
                       </Text>
                     </Pressable>
                     <Pressable
                       onPress={() => setDeleteTarget(card)}
-                      className="flex-1 flex-row items-center justify-center gap-2 bg-red-950/40 border border-red-900/50 rounded-xl py-2.5 active:bg-red-900/50"
+                      className="flex-1 flex-row items-center justify-center gap-2 bg-red-50 border border-red-200 rounded-xl py-2.5 active:bg-red-100 dark:bg-red-950/40 dark:border-red-900/50 dark:active:bg-red-900/50"
                     >
-                      <Ionicons name="trash-outline" size={16} color="#f87171" />
-                      <Text className="text-red-400 text-sm font-semibold">
+                      <Ionicons name="trash-outline" size={16} color={isDark ? "#f87171" : "#dc2626"} />
+                      <Text className="text-red-700 dark:text-red-400 text-sm font-semibold">
                         Delete
                       </Text>
                     </Pressable>

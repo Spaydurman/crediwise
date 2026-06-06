@@ -53,7 +53,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
@@ -69,15 +69,19 @@ export default function LoginScreen() {
                 <Ionicons name="card" size={40} color="white" />
               </View>
               <View className="items-center gap-1">
-                <Text className="text-white text-3xl font-bold">CrediWise</Text>
-                <Text className="text-slate-400 text-base text-center">
+                <Text className="text-slate-950 text-3xl font-bold dark:text-white">
+                  CrediWise
+                </Text>
+                <Text className="text-slate-600 text-base text-center dark:text-slate-400">
                   Track your credit card spending{"\n"}and savings all in one place.
                 </Text>
               </View>
             </View>
 
             <View className="gap-4">
-              <Text className="text-white text-2xl font-bold">Sign In</Text>
+              <Text className="text-slate-950 text-2xl font-bold dark:text-white">
+                Sign In
+              </Text>
 
               <Controller
                 control={control}
@@ -142,16 +146,16 @@ export default function LoginScreen() {
               </View>
 
               <View className="flex-row items-center gap-3 py-2">
-                <View className="flex-1 h-px bg-slate-700" />
+                <View className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
                 <Text className="text-slate-500 text-sm">or</Text>
-                <View className="flex-1 h-px bg-slate-700" />
+                <View className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
               </View>
 
               <GoogleSignInButton />
             </View>
 
             <View className="flex-row items-center justify-center gap-1">
-              <Text className="text-slate-400 text-sm">
+              <Text className="text-slate-600 text-sm dark:text-slate-400">
                 Don't have an account?
               </Text>
               <Link href="/(auth)/register" asChild>

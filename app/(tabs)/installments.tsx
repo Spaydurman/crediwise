@@ -10,11 +10,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { CARD_COLOR_BG_MAP, CURRENCY, DATE_FORMAT } from "@/constants";
+import { CARD_COLOR_BG_MAP, CARD_COLOR_ICON_MAP, CURRENCY, DATE_FORMAT } from "@/constants";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useThemeStore } from "@/stores/theme.store";
 import type { Transaction } from "@/types";
 
 export default function InstallmentsScreen() {
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
   const { transactions, loading, setSubscriptionActive } = useTransactions();
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -72,17 +74,17 @@ export default function InstallmentsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-950 items-center justify-center">
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
         <ActivityIndicator size="large" color="#6366f1" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <View className="px-5 pt-4 pb-3">
-        <Text className="text-white text-2xl font-bold">Recurring</Text>
+        <Text className="text-slate-950 dark:text-white text-2xl font-bold">Recurring</Text>
         <Text className="text-slate-500 text-sm mt-0.5">
           {active.length} installment{active.length === 1 ? "" : "s"} ·{" "}
           {activeSubscriptions.length} subscription
@@ -103,30 +105,30 @@ export default function InstallmentsScreen() {
         >
           {/* Installment summary */}
           {active.length > 0 && (
-            <View className="flex-row gap-2 bg-slate-900 border border-slate-800 rounded-2xl p-3">
+            <View className="flex-row gap-2 bg-white border border-slate-200 rounded-2xl p-3 dark:bg-slate-900 dark:border-slate-800">
               <View className="flex-1 items-center gap-0.5">
                 <Text className="text-slate-500 text-xs">Monthly Due</Text>
-                <Text className="text-white text-sm font-bold">
+                <Text className="text-slate-950 dark:text-white text-sm font-bold">
                   {CURRENCY}
                   {monthlyCommitment.toLocaleString("en-PH", {
                     minimumFractionDigits: 2,
                   })}
                 </Text>
               </View>
-              <View className="w-px bg-slate-800" />
+              <View className="w-px bg-slate-200 dark:bg-slate-800" />
               <View className="flex-1 items-center gap-0.5">
                 <Text className="text-slate-500 text-xs">Total Remaining</Text>
-                <Text className="text-amber-400 text-sm font-bold">
+                <Text className="text-amber-700 dark:text-amber-400 text-sm font-bold">
                   {CURRENCY}
                   {totalRemainingPayments.toLocaleString("en-PH", {
                     minimumFractionDigits: 2,
                   })}
                 </Text>
               </View>
-              <View className="w-px bg-slate-800" />
+              <View className="w-px bg-slate-200 dark:bg-slate-800" />
               <View className="flex-1 items-center gap-0.5">
                 <Text className="text-slate-500 text-xs">Active</Text>
-                <Text className="text-indigo-400 text-sm font-bold">
+                <Text className="text-indigo-700 dark:text-indigo-400 text-sm font-bold">
                   {active.length}
                 </Text>
               </View>
@@ -159,24 +161,24 @@ export default function InstallmentsScreen() {
 
           {/* Subscription summary */}
           {subscriptions.length > 0 && (
-            <View className="flex-row gap-2 bg-slate-900 border border-slate-800 rounded-2xl p-3">
+            <View className="flex-row gap-2 bg-white border border-slate-200 rounded-2xl p-3 dark:bg-slate-900 dark:border-slate-800">
               <View className="flex-1 items-center gap-0.5">
                 <Text className="text-slate-500 text-xs">Monthly Subs</Text>
-                <Text className="text-white text-sm font-bold">
+                <Text className="text-slate-950 dark:text-white text-sm font-bold">
                   {CURRENCY}
                   {monthlySubscriptionTotal.toLocaleString("en-PH", {
                     minimumFractionDigits: 2,
                   })}
                 </Text>
               </View>
-              <View className="w-px bg-slate-800" />
+              <View className="w-px bg-slate-200 dark:bg-slate-800" />
               <View className="flex-1 items-center gap-0.5">
                 <Text className="text-slate-500 text-xs">Active</Text>
-                <Text className="text-teal-400 text-sm font-bold">
+                <Text className="text-teal-700 dark:text-teal-400 text-sm font-bold">
                   {activeSubscriptions.length}
                 </Text>
               </View>
-              <View className="w-px bg-slate-800" />
+              <View className="w-px bg-slate-200 dark:bg-slate-800" />
               <View className="flex-1 items-center gap-0.5">
                 <Text className="text-slate-500 text-xs">Inactive</Text>
                 <Text className="text-slate-400 text-sm font-bold">
@@ -232,25 +234,29 @@ function SubscriptionCard({
   toggling: boolean;
   onToggle: () => void;
 }) {
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
   const cardColor = t.credit_card?.color ?? "indigo";
   const cardBgClass = CARD_COLOR_BG_MAP[cardColor];
+  const cardIconColor = CARD_COLOR_ICON_MAP[cardColor];
   const isActive = t.subscription_active;
 
   return (
     <View
-      className={`bg-slate-900 border rounded-xl p-4 gap-3 ${
-        isActive ? "border-teal-800/50" : "border-slate-800"
+      className={`bg-white dark:bg-slate-900 border rounded-xl p-4 gap-3 ${
+        isActive
+          ? "border-teal-200 dark:border-teal-800/50"
+          : "border-slate-200 dark:border-slate-800"
       }`}
     >
       <View className="flex-row items-start gap-3">
         <View
-          className={`${cardBgClass} w-10 h-10 rounded-xl items-center justify-center flex-shrink-0`}
+          className={`${isDark ? cardBgClass : "bg-slate-100 border border-slate-200"} w-10 h-10 rounded-xl items-center justify-center flex-shrink-0`}
         >
-          <Ionicons name="repeat-outline" size={18} color="white" />
+          <Ionicons name="repeat-outline" size={18} color={isDark ? "white" : cardIconColor} />
         </View>
 
         <View className="flex-1 gap-0.5">
-          <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+          <Text className="text-slate-950 dark:text-white font-semibold text-sm" numberOfLines={1}>
             {t.description}
           </Text>
           <Text className="text-slate-500 text-xs">
@@ -267,21 +273,21 @@ function SubscriptionCard({
         </View>
 
         <View className="items-end gap-1">
-          <Text className="text-white font-bold text-base">
+          <Text className="text-slate-950 dark:text-white font-bold text-base">
             {CURRENCY}
             {t.amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
           </Text>
-          <Text className="text-teal-400 text-xs font-semibold">per month</Text>
+          <Text className="text-teal-700 dark:text-teal-400 text-xs font-semibold">per month</Text>
           <View
             className={`px-2 py-0.5 rounded-full border ${
               isActive
-                ? "bg-teal-900/60 border-teal-700"
-                : "bg-slate-800 border-slate-700"
+                ? "bg-teal-50 border-teal-200 dark:bg-teal-900/60 dark:border-teal-700"
+                : "bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700"
             }`}
           >
             <Text
               className={`text-xs font-semibold ${
-                isActive ? "text-teal-400" : "text-slate-400"
+                isActive ? "text-teal-700 dark:text-teal-400" : "text-slate-700 dark:text-slate-400"
               }`}
             >
               {isActive ? "Active" : "Inactive"}
@@ -295,22 +301,22 @@ function SubscriptionCard({
         disabled={toggling}
         className={`flex-row items-center justify-center gap-2 rounded-xl py-2.5 border ${
           isActive
-            ? "bg-slate-800 border-slate-700 active:bg-slate-700"
-            : "bg-teal-700 border-teal-600 active:bg-teal-800"
+            ? "bg-slate-100 border-slate-200 active:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:active:bg-slate-700"
+            : "bg-teal-50 border-teal-200 active:bg-teal-100 dark:bg-teal-700 dark:border-teal-600 dark:active:bg-teal-800"
         } ${toggling ? "opacity-60" : ""}`}
       >
         {toggling ? (
-          <ActivityIndicator size={14} color={isActive ? "#cbd5e1" : "white"} />
+          <ActivityIndicator size={14} color={isActive ? (isDark ? "#cbd5e1" : "#475569") : (isDark ? "white" : "#0f766e")} />
         ) : (
           <Ionicons
             name={isActive ? "pause-circle-outline" : "play-circle-outline"}
             size={16}
-            color={isActive ? "#cbd5e1" : "white"}
+            color={isActive ? (isDark ? "#cbd5e1" : "#475569") : (isDark ? "white" : "#0f766e")}
           />
         )}
         <Text
           className={`text-xs font-semibold ${
-            isActive ? "text-slate-200" : "text-white"
+            isActive ? "text-slate-700 dark:text-slate-200" : "text-teal-700 dark:text-white"
           }`}
         >
           {isActive ? "Set Inactive" : "Set Active"}
@@ -325,6 +331,7 @@ function InstallmentCard({
 }: {
   transaction: ReturnType<typeof useTransactions>["transactions"][0];
 }) {
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
   const paidMonths = t.paid_periods_count ?? 0;
   const totalMonths = t.installment_months ?? 0;
   const remainingMonths = Math.max(0, totalMonths - paidMonths);
@@ -336,23 +343,26 @@ function InstallmentCard({
 
   const cardColor = t.credit_card?.color ?? "indigo";
   const cardBgClass = CARD_COLOR_BG_MAP[cardColor];
+  const cardIconColor = CARD_COLOR_ICON_MAP[cardColor];
 
   return (
     <View
-      className={`bg-slate-900 border rounded-xl p-4 gap-3 ${
-        isCompleted ? "border-emerald-800/50" : "border-slate-800"
+      className={`bg-white dark:bg-slate-900 border rounded-xl p-4 gap-3 ${
+        isCompleted
+          ? "border-emerald-200 dark:border-emerald-800/50"
+          : "border-slate-200 dark:border-slate-800"
       }`}
     >
       {/* Top row */}
       <View className="flex-row items-start gap-3">
         <View
-          className={`${cardBgClass} w-10 h-10 rounded-xl items-center justify-center flex-shrink-0`}
+          className={`${isDark ? cardBgClass : "bg-slate-100 border border-slate-200"} w-10 h-10 rounded-xl items-center justify-center flex-shrink-0`}
         >
-          <Ionicons name="layers-outline" size={18} color="white" />
+          <Ionicons name="layers-outline" size={18} color={isDark ? "white" : cardIconColor} />
         </View>
 
         <View className="flex-1 gap-0.5">
-          <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+          <Text className="text-slate-950 dark:text-white font-semibold text-sm" numberOfLines={1}>
             {t.description}
           </Text>
           <Text className="text-slate-500 text-xs">
@@ -364,11 +374,11 @@ function InstallmentCard({
         </View>
 
         <View className="items-end gap-1">
-          <Text className="text-white font-bold text-base">
+          <Text className="text-slate-950 dark:text-white font-bold text-base">
             {CURRENCY}
             {t.amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
           </Text>
-          <Text className="text-indigo-400 text-xs font-semibold">
+          <Text className="text-indigo-700 dark:text-indigo-400 text-xs font-semibold">
             {CURRENCY}
             {(t.monthly_amount ?? 0).toLocaleString("en-PH", {
               minimumFractionDigits: 2,
@@ -377,8 +387,8 @@ function InstallmentCard({
           </Text>
           {isCompleted && (
             <View className="flex-row items-center gap-1">
-              <Ionicons name="checkmark-circle" size={12} color="#34d399" />
-              <Text className="text-emerald-400 text-xs font-semibold">
+              <Ionicons name="checkmark-circle" size={12} color={isDark ? "#34d399" : "#047857"} />
+              <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
                 Done
               </Text>
             </View>
@@ -389,7 +399,7 @@ function InstallmentCard({
       {/* Progress */}
       <View className="gap-2">
         {/* Progress bar */}
-        <View className="h-2 bg-slate-800 rounded-full overflow-hidden">
+        <View className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
           <View
             className={`h-full rounded-full ${
               isCompleted ? "bg-emerald-500" : "bg-indigo-500"
@@ -400,7 +410,7 @@ function InstallmentCard({
 
         {/* Month counter */}
         <View className="flex-row items-center justify-between">
-          <Text className="text-slate-400 text-xs font-semibold">
+          <Text className="text-slate-700 dark:text-slate-400 text-xs font-semibold">
             {paidMonths}/{totalMonths} months paid
           </Text>
           {!isCompleted && (
@@ -411,10 +421,10 @@ function InstallmentCard({
         </View>
 
         {/* Amount breakdown */}
-        <View className="flex-row items-center justify-between border-t border-slate-800 pt-2">
+        <View className="flex-row items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-2">
           <View className="gap-0.5">
             <Text className="text-slate-500 text-xs">Paid so far</Text>
-            <Text className="text-emerald-400 text-sm font-bold">
+            <Text className="text-emerald-700 dark:text-emerald-400 text-sm font-bold">
               {CURRENCY}
               {paidAmount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
             </Text>
@@ -422,7 +432,7 @@ function InstallmentCard({
           {!isCompleted && (
             <View className="items-end gap-0.5">
               <Text className="text-slate-500 text-xs">Still to pay</Text>
-              <Text className="text-amber-400 text-sm font-bold">
+              <Text className="text-amber-700 dark:text-amber-400 text-sm font-bold">
                 {CURRENCY}
                 {remainingAmount.toLocaleString("en-PH", {
                   minimumFractionDigits: 2,

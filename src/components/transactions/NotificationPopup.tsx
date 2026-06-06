@@ -22,11 +22,11 @@ export function NotificationPopup({
     <>
       <Pressable className="absolute inset-0 z-40" onPress={onClose} />
       <View
-        className="absolute right-5 z-50 w-72 bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden"
+        className="absolute right-5 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
         style={{ top: 68 }}
       >
-        <View className="px-4 py-3 border-b border-slate-800 flex-row items-center justify-between">
-          <Text className="text-white text-sm font-bold">Notifications</Text>
+        <View className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between">
+          <Text className="text-slate-950 dark:text-white text-sm font-bold">Notifications</Text>
           <Pressable onPress={onClose}>
             <Ionicons name="close" size={16} color="#64748b" />
           </Pressable>
@@ -35,14 +35,14 @@ export function NotificationPopup({
         {overdueGroups.map((g) => (
           <View
             key={g.key}
-            className="px-4 py-3 border-b border-slate-800/60 flex-row items-start gap-3"
+            className="px-4 py-3 border-b border-slate-200 dark:border-slate-800/60 flex-row items-start gap-3"
           >
-            <Ionicons name="alert-circle" size={16} color="#f87171" />
+            <Ionicons name="alert-circle" size={16} color="#dc2626" />
             <View className="flex-1 gap-0.5">
-              <Text className="text-white text-xs font-semibold">
+              <Text className="text-slate-950 dark:text-white text-xs font-semibold">
                 {g.card.bank} — {g.card.name}
               </Text>
-              <Text className="text-red-400 text-xs">
+              <Text className="text-red-700 dark:text-red-400 text-xs">
                 Overdue · Due {format(g.billingDate, DATE_FORMAT)}
               </Text>
             </View>
@@ -52,14 +52,14 @@ export function NotificationPopup({
         {dueSoonGroups.map((g) => (
           <View
             key={g.key}
-            className="px-4 py-3 border-b border-slate-800/60 flex-row items-start gap-3"
+            className="px-4 py-3 border-b border-slate-200 dark:border-slate-800/60 flex-row items-start gap-3"
           >
-            <Ionicons name="warning" size={16} color="#fbbf24" />
+            <Ionicons name="warning" size={16} color="#a16207" />
             <View className="flex-1 gap-0.5">
-              <Text className="text-white text-xs font-semibold">
+              <Text className="text-slate-950 dark:text-white text-xs font-semibold">
                 {g.card.bank} — {g.card.name}
               </Text>
-              <Text className="text-amber-400 text-xs">
+              <Text className="text-amber-700 dark:text-amber-400 text-xs">
                 Due soon · {format(g.billingDate, DATE_FORMAT)}
               </Text>
             </View>

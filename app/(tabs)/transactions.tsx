@@ -29,12 +29,14 @@ import { useSavings } from "@/hooks/useSavings";
 import { useTransactions } from "@/hooks/useTransactions";
 import { getBillingPeriod } from "@/lib/billing";
 import { scanReceipt, type ReceiptSource } from "@/lib/receiptOcr";
+import { useThemeStore } from "@/stores/theme.store";
 import type { AddSavingInput, AddTransactionInput, Transaction } from "@/types";
 
 const MAX_RECURRING_PERIODS = 240;
 
 export default function TransactionsScreen() {
   const { cards } = useCards();
+  const isDark = useThemeStore((state) => state.themeMode === "dark");
   const {
     transactions,
     loading,
@@ -264,25 +266,35 @@ export default function TransactionsScreen() {
     setShowScanSheet(true);
   };
 
+  const notificationColor = overdueGroups.length > 0
+    ? isDark
+      ? "#f87171"
+      : "#dc2626"
+    : isDark
+    ? "#fbbf24"
+    : "#a16207";
+  const scanAccentColor = isDark ? "#ffffff" : "#0f766e";
+  const addAccentColor = isDark ? "#ffffff" : "#4338ca";
+
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="flex-1">
         <View className="px-5 pt-4 pb-3 flex-row items-center justify-between">
-          <Text className="text-white text-2xl font-bold">Transactions</Text>
+          <Text className="text-slate-950 dark:text-white text-2xl font-bold">Transactions</Text>
           <View className="flex-row items-center gap-2">
             {(overdueGroups.length > 0 || dueSoonGroups.length > 0) && (
               <Pressable
                 onPress={() => setShowNotifications((v) => !v)}
-                className="relative w-10 h-10 bg-slate-800 border border-slate-700 rounded-xl items-center justify-center active:bg-slate-700"
+                className="relative w-10 h-10 bg-white border border-slate-200 rounded-xl items-center justify-center active:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:active:bg-slate-700"
               >
                 <Ionicons
                   name={showNotifications ? "notifications" : "notifications-outline"}
                   size={18}
-                  color={overdueGroups.length > 0 ? "#f87171" : "#fbbf24"}
+                  color={notificationColor}
                 />
                 <View
                   className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
-                    overdueGroups.length > 0 ? "bg-red-500" : "bg-amber-400"
+                    overdueGroups.length > 0 ? "bg-red-600" : "bg-amber-600"
                   }`}
                 />
               </Pressable>
@@ -293,48 +305,48 @@ export default function TransactionsScreen() {
               accessibilityLabel="Scan receipt"
               className={`flex-row items-center gap-2 px-4 py-2.5 rounded-xl border ${
                 scanning
-                  ? "bg-teal-900/40 border-teal-800"
-                  : "bg-teal-700 border-teal-600 active:bg-teal-800"
+                  ? "bg-teal-100 border-teal-200 dark:bg-teal-900/40 dark:border-teal-800"
+                  : "bg-teal-50 border-teal-200 active:bg-teal-100 dark:bg-teal-700 dark:border-teal-600 dark:active:bg-teal-800"
               }`}
             >
               {scanning ? (
-                <ActivityIndicator size={14} color="white" />
+                <ActivityIndicator size={14} color={scanAccentColor} />
               ) : (
-                <Ionicons name="scan-outline" size={18} color="white" />
+                <Ionicons name="scan-outline" size={18} color={scanAccentColor} />
               )}
-              <Text className="text-white text-sm font-semibold">
+              <Text className="text-teal-700 dark:text-white text-sm font-semibold">
                 {scanning ? "Scanning" : "Scan"}
               </Text>
             </Pressable>
             <Pressable
               onPress={openManualAdd}
-              className="flex-row items-center gap-2 bg-indigo-600 px-4 py-2.5 rounded-xl active:bg-indigo-700"
+              className="flex-row items-center gap-2 bg-indigo-50 border border-indigo-200 px-4 py-2.5 rounded-xl active:bg-indigo-100 dark:bg-indigo-600 dark:border-indigo-500 dark:active:bg-indigo-700"
             >
-              <Ionicons name="add" size={18} color="white" />
-              <Text className="text-white text-sm font-semibold">Add</Text>
+              <Ionicons name="add" size={18} color={addAccentColor} />
+              <Text className="text-indigo-700 dark:text-white text-sm font-semibold">Add</Text>
             </Pressable>
           </View>
         </View>
 
         <View className="px-5 pb-3">
-          <View className="flex-row gap-2 bg-slate-900 border border-slate-800 rounded-2xl p-3">
+          <View className="flex-row gap-2 bg-white border border-slate-200 rounded-2xl p-3 dark:bg-slate-900 dark:border-slate-800">
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Spent</Text>
-              <Text className="text-white text-sm font-bold">
+              <Text className="text-slate-950 dark:text-white text-sm font-bold">
                 {CURRENCY}{activeSpending.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
-            <View className="w-px bg-slate-800" />
+            <View className="w-px bg-slate-200 dark:bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Saved</Text>
-              <Text className="text-emerald-400 text-sm font-bold">
+              <Text className="text-emerald-700 dark:text-emerald-400 text-sm font-bold">
                 {CURRENCY}{activeSaved.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
-            <View className="w-px bg-slate-800" />
+            <View className="w-px bg-slate-200 dark:bg-slate-800" />
             <View className="flex-1 items-center gap-0.5">
               <Text className="text-slate-500 text-xs">Shortage</Text>
-              <Text className="text-amber-400 text-sm font-bold">
+              <Text className="text-amber-700 dark:text-amber-400 text-sm font-bold">
                 {CURRENCY}{activeShortage.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </Text>
             </View>
@@ -360,14 +372,16 @@ export default function TransactionsScreen() {
                     onPress={() => setSelectedCardFilter(item.id ?? null)}
                     className={`flex-row items-center gap-2 px-3 py-2 rounded-xl border ${
                       isSelected
-                        ? "bg-indigo-600/20 border-indigo-600"
-                        : "bg-slate-900 border-slate-800"
+                        ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-600/20 dark:border-indigo-600"
+                        : "bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800"
                     }`}
                   >
                     {item.id && <View className={`w-2.5 h-2.5 rounded-full ${colorClass}`} />}
                     <Text
                       className={`text-xs font-semibold ${
-                        isSelected ? "text-indigo-400" : "text-slate-400"
+                        isSelected
+                          ? "text-indigo-700 dark:text-indigo-300"
+                          : "text-slate-700 dark:text-slate-400"
                       }`}
                     >
                       {item.id ? item.bank : "All Cards"}
@@ -462,21 +476,21 @@ export default function TransactionsScreen() {
         snapHeight={360}
       >
         <View className="px-5 pt-4 pb-5 gap-3">
-          <Text className="text-slate-400 text-sm leading-5">
+          <Text className="text-slate-600 dark:text-slate-400 text-sm leading-5">
             Capture a new photo or choose one from your library. We&apos;ll prefill
             the merchant, amount, and date from the receipt.
           </Text>
 
           <Pressable
             onPress={() => runScan("camera")}
-            className="flex-row items-center gap-3 rounded-2xl border border-teal-700/60 bg-teal-600/15 p-4 active:bg-teal-600/25"
+            className="flex-row items-center gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-4 active:bg-teal-100 dark:border-teal-700/60 dark:bg-teal-600/15 dark:active:bg-teal-600/25"
           >
-            <View className="h-11 w-11 items-center justify-center rounded-xl bg-teal-600">
-              <Ionicons name="camera-outline" size={22} color="white" />
+            <View className="h-11 w-11 items-center justify-center rounded-xl bg-teal-100 dark:bg-teal-600">
+              <Ionicons name="camera-outline" size={22} color={isDark ? "#ffffff" : "#0f766e"} />
             </View>
             <View className="flex-1 gap-0.5">
-              <Text className="text-base font-semibold text-white">Use Camera</Text>
-              <Text className="text-xs text-slate-400">
+              <Text className="text-base font-semibold text-slate-950 dark:text-white">Use Camera</Text>
+              <Text className="text-xs text-slate-500 dark:text-slate-400">
                 Take a fresh photo of your receipt
               </Text>
             </View>
@@ -485,14 +499,14 @@ export default function TransactionsScreen() {
 
           <Pressable
             onPress={() => runScan("library")}
-            className="flex-row items-center gap-3 rounded-2xl border border-indigo-700/60 bg-indigo-600/15 p-4 active:bg-indigo-600/25"
+            className="flex-row items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 active:bg-indigo-100 dark:border-indigo-700/60 dark:bg-indigo-600/15 dark:active:bg-indigo-600/25"
           >
-            <View className="h-11 w-11 items-center justify-center rounded-xl bg-indigo-600">
-              <Ionicons name="images-outline" size={22} color="white" />
+            <View className="h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-600">
+              <Ionicons name="images-outline" size={22} color={isDark ? "#ffffff" : "#4338ca"} />
             </View>
             <View className="flex-1 gap-0.5">
-              <Text className="text-base font-semibold text-white">Choose from Library</Text>
-              <Text className="text-xs text-slate-400">
+              <Text className="text-base font-semibold text-slate-950 dark:text-white">Choose from Library</Text>
+              <Text className="text-xs text-slate-500 dark:text-slate-400">
                 Pick an existing receipt image
               </Text>
             </View>
@@ -503,7 +517,7 @@ export default function TransactionsScreen() {
             onPress={() => setShowScanSheet(false)}
             className="mt-1 items-center py-3"
           >
-            <Text className="text-sm font-medium text-slate-400">Cancel</Text>
+            <Text className="text-sm font-medium text-slate-600 dark:text-slate-400">Cancel</Text>
           </Pressable>
         </View>
       </BottomSheet>

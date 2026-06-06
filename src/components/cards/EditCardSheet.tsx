@@ -185,7 +185,7 @@ export function EditCardSheet({
           />
 
           <View className="gap-2">
-            <Text className="text-slate-300 text-sm font-medium">Card Color</Text>
+            <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium">Card Color</Text>
             <Controller
               control={control}
               name="color"
@@ -198,7 +198,7 @@ export function EditCardSheet({
                       className={`
                         w-10 h-10 rounded-full items-center justify-center
                         ${c.className}
-                        ${value === c.value ? "border-2 border-white" : "border-2 border-transparent"}
+                        ${value === c.value ? "border-2 border-slate-900 dark:border-white" : "border-2 border-slate-200 dark:border-transparent"}
                       `}
                     >
                       {value === c.value && (

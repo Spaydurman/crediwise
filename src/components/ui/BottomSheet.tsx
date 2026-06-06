@@ -93,17 +93,17 @@ export function BottomSheet({
           keyboardVerticalOffset={0}
         >
           <Animated.View
-            className="bg-slate-900 rounded-t-3xl overflow-hidden"
+            className="bg-white dark:bg-slate-900 rounded-t-3xl overflow-hidden border-t border-slate-200 dark:border-slate-800"
             style={{
               transform: [{ translateY: slideAnim }],
               maxHeight: sheetMaxHeight,
             }}
           >
-            <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-800">
-              <Text className="text-white text-lg font-semibold">{title}</Text>
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+              <Text className="text-slate-950 dark:text-white text-lg font-semibold">{title}</Text>
               <Pressable
                 onPress={onClose}
-                className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center active:bg-slate-700"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center active:bg-slate-200 dark:active:bg-slate-700"
               >
                 <Ionicons name="close" size={18} color="#94a3b8" />
               </Pressable>

@@ -33,6 +33,17 @@ export const CARD_COLOR_BG_MAP: Record<CardColor, string> = {
   fuchsia: "bg-fuchsia-600",
 };
 
+export const CARD_COLOR_ICON_MAP: Record<CardColor, string> = {
+  indigo: "#4338ca",
+  violet: "#7c3aed",
+  sky: "#0369a1",
+  emerald: "#047857",
+  rose: "#be123c",
+  amber: "#b45309",
+  slate: "#475569",
+  fuchsia: "#a21caf",
+};
+
 export const TRANSACTION_CATEGORIES = [
   "Food & Dining",
   "Shopping",

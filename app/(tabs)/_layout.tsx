@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
+import { getThemeColors } from "@/constants/theme";
 import { useAuthStore } from "@/stores/auth.store";
+import { useThemeStore } from "@/stores/theme.store";
 
-const TAB_BAR_STYLE = {
-  backgroundColor: "#0f172a",
-  borderTopColor: "#1e293b",
+const TAB_BAR_BASE_STYLE = {
   borderTopWidth: 1,
   height: 60,
   paddingBottom: 8,
@@ -13,6 +13,8 @@ const TAB_BAR_STYLE = {
 
 export default function TabLayout() {
   const user = useAuthStore((state) => state.user);
+  const themeMode = useThemeStore((state) => state.themeMode);
+  const themeColors = getThemeColors(themeMode);
 
   if (!user) {
     return <Redirect href="/(auth)/login" />;
@@ -22,9 +24,13 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: TAB_BAR_STYLE,
-        tabBarActiveTintColor: "#6366f1",
-        tabBarInactiveTintColor: "#64748b",
+        tabBarStyle: {
+          ...TAB_BAR_BASE_STYLE,
+          backgroundColor: themeColors.tabBarBackground,
+          borderTopColor: themeColors.tabBarBorder,
+        },
+        tabBarActiveTintColor: themeColors.tabBarActive,
+        tabBarInactiveTintColor: themeColors.tabBarInactive,
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >

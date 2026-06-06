@@ -19,16 +19,17 @@ const VARIANT_CLASSES: Record<ButtonVariant, { container: string; text: string }
     text: "text-white font-semibold",
   },
   secondary: {
-    container: "bg-slate-700 active:bg-slate-600 border border-slate-600",
-    text: "text-slate-100 font-semibold",
+    container:
+      "bg-slate-200 active:bg-slate-300 border border-slate-300 dark:bg-slate-700 dark:active:bg-slate-600 dark:border-slate-600",
+    text: "text-slate-900 dark:text-slate-100 font-semibold",
   },
   danger: {
     container: "bg-red-600 active:bg-red-700",
     text: "text-white font-semibold",
   },
   ghost: {
-    container: "bg-transparent active:bg-slate-800",
-    text: "text-indigo-400 font-semibold",
+    container: "bg-transparent active:bg-slate-100 dark:active:bg-slate-800",
+    text: "text-indigo-600 dark:text-indigo-400 font-semibold",
   },
 };
 
@@ -50,6 +51,8 @@ export function Button({
   const { container, text } = VARIANT_CLASSES[variant];
   const { container: sizeContainer, text: sizeText } = SIZE_CLASSES[size];
   const isDisabled = disabled || loading;
+  const loadingColor =
+    variant === "primary" || variant === "danger" ? "#ffffff" : "#4f46e5";
 
   return (
     <Pressable
@@ -62,7 +65,7 @@ export function Button({
         ${isDisabled ? "opacity-50" : ""}
       `}
     >
-      {loading && <ActivityIndicator size="small" color="white" />}
+      {loading && <ActivityIndicator size="small" color={loadingColor} />}
       <Text className={`${text} ${sizeText}`}>{label}</Text>
     </Pressable>
   );

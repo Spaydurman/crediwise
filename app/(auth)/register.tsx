@@ -67,7 +67,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
@@ -79,8 +79,10 @@ export default function RegisterScreen() {
         >
           <View className="gap-8">
             <View className="gap-2">
-              <Text className="text-white text-3xl font-bold">Create Account</Text>
-              <Text className="text-slate-400 text-base">
+              <Text className="text-slate-950 text-3xl font-bold dark:text-white">
+                Create Account
+              </Text>
+              <Text className="text-slate-600 text-base dark:text-slate-400">
                 Start tracking your credit card spending wisely.
               </Text>
             </View>
@@ -191,16 +193,16 @@ export default function RegisterScreen() {
               </View>
 
               <View className="flex-row items-center gap-3 py-2">
-                <View className="flex-1 h-px bg-slate-700" />
+                <View className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
                 <Text className="text-slate-500 text-sm">or</Text>
-                <View className="flex-1 h-px bg-slate-700" />
+                <View className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
               </View>
 
               <GoogleSignInButton />
             </View>
 
             <View className="flex-row items-center justify-center gap-1">
-              <Text className="text-slate-400 text-sm">
+              <Text className="text-slate-600 text-sm dark:text-slate-400">
                 Already have an account?
               </Text>
               <Link href="/(auth)/login" asChild>

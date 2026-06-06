@@ -96,16 +96,16 @@ export function AddSavingSheet({
       >
         <View className="gap-4 pb-8">
           {transaction && (
-            <View className="bg-slate-800 rounded-xl p-4 gap-2 border border-slate-700">
+            <View className="bg-white dark:bg-slate-800 rounded-xl p-4 gap-2 border border-slate-200 dark:border-slate-700">
               <Text
-                className="text-white font-semibold text-sm"
+                className="text-slate-950 dark:text-white font-semibold text-sm"
                 numberOfLines={1}
               >
                 {transaction.description}
               </Text>
               {transaction.is_installment && transaction.monthly_amount && (
-                <View className="bg-indigo-950/50 border border-indigo-800/50 rounded-lg px-3 py-2">
-                  <Text className="text-indigo-300 text-xs">
+                <View className="bg-indigo-50 border border-indigo-200 dark:bg-indigo-950/50 dark:border-indigo-800/50 rounded-lg px-3 py-2">
+                  <Text className="text-indigo-700 dark:text-indigo-300 text-xs">
                     Installment: {transaction.installment_months} months — {CURRENCY}
                     {transaction.monthly_amount.toLocaleString("en-PH", {
                       minimumFractionDigits: 2,
@@ -119,7 +119,7 @@ export function AddSavingSheet({
                   <Text className="text-slate-500 text-xs">
                     {transaction.is_installment ? "Monthly Due" : "Total Amount"}
                   </Text>
-                  <Text className="text-white text-sm font-bold">
+                  <Text className="text-slate-950 dark:text-white text-sm font-bold">
                     {CURRENCY}
                     {trackableAmount.toLocaleString("en-PH", {
                       minimumFractionDigits: 2,
@@ -128,7 +128,7 @@ export function AddSavingSheet({
                 </View>
                 <View>
                   <Text className="text-slate-500 text-xs">Already Saved</Text>
-                  <Text className="text-emerald-400 text-sm font-bold">
+                  <Text className="text-emerald-700 dark:text-emerald-400 text-sm font-bold">
                     {CURRENCY}
                     {(transaction.total_saved ?? 0).toLocaleString("en-PH", {
                       minimumFractionDigits: 2,
@@ -137,7 +137,7 @@ export function AddSavingSheet({
                 </View>
                 <View>
                   <Text className="text-slate-500 text-xs">Remaining</Text>
-                  <Text className="text-amber-400 text-sm font-bold">
+                  <Text className="text-amber-700 dark:text-amber-400 text-sm font-bold">
                     {CURRENCY}
                     {remaining.toLocaleString("en-PH", {
                       minimumFractionDigits: 2,
