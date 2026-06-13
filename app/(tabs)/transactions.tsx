@@ -19,6 +19,7 @@ import {
 import { BillingGroupCard } from "@/components/transactions/BillingGroupCard";
 import { NotificationPopup } from "@/components/transactions/NotificationPopup";
 import { PaidStatementsSection } from "@/components/transactions/PaidStatementsSection";
+import { getTransactionRemainingAmount } from "@/components/transactions/summary";
 import type { BillingGroup } from "@/components/transactions/types";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -46,7 +47,7 @@ export default function TransactionsScreen() {
     toggleInstallmentPeriodPaid,
     markGroupPaid,
   } = useTransactions();
-  const { addSaving } = useSavings();
+  const { addSaving, addSavings } = useSavings();
 
   const [selectedCardFilter, setSelectedCardFilter] = useState<string | null>(null);
   const [showAddTxn, setShowAddTxn] = useState(false);
@@ -55,6 +56,8 @@ export default function TransactionsScreen() {
   const [scanning, setScanning] = useState(false);
   const [showScanSheet, setShowScanSheet] = useState(false);
   const [savingTarget, setSavingTarget] = useState<Transaction | null>(null);
+  const [savingTransactionIds, setSavingTransactionIds] = useState<string[]>([]);
+  const [savingGroupKey, setSavingGroupKey] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -182,6 +185,7 @@ export default function TransactionsScreen() {
 
   const overdueGroups = activeGroups.filter((g) => g.isOverdue);
   const dueSoonGroups = activeGroups.filter((g) => g.isDueSoon);
+  const todayString = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const { activeSpending, activeSaved, activeShortage } = useMemo(() => {
     // Spending: sum per-period amounts across all active groups (installments count monthly_amount each period)
@@ -210,6 +214,56 @@ export default function TransactionsScreen() {
     }
     return { activeSpending: spending, activeSaved: saved, activeShortage: shortage };
   }, [activeGroups]);
+
+  const handleSaveTransaction = async (transaction: Transaction) => {
+    const remaining = getTransactionRemainingAmount(transaction);
+    if (remaining <= 0 || savingTransactionIds.length > 0 || savingGroupKey) return;
+
+    setSavingTransactionIds([transaction.id]);
+    try {
+      await addSaving({
+        transaction_id: transaction.id,
+        amount: remaining,
+        notes: "",
+        saved_date: todayString,
+      });
+    } catch {
+      Alert.alert("Save failed", "Failed to record saving. Please try again.");
+    } finally {
+      setSavingTransactionIds([]);
+    }
+  };
+
+  const handleSaveGroup = async (group: BillingGroup) => {
+    if (savingTransactionIds.length > 0 || savingGroupKey) return;
+
+    const savingsToCreate = group.transactions
+      .map((transaction) => ({
+        transaction,
+        amount: getTransactionRemainingAmount(transaction),
+      }))
+      .filter((item) => item.amount > 0);
+
+    if (savingsToCreate.length === 0) return;
+
+    setSavingGroupKey(group.key);
+    setSavingTransactionIds(savingsToCreate.map((item) => item.transaction.id));
+    try {
+      await addSavings(
+        savingsToCreate.map(({ transaction, amount }) => ({
+          transaction_id: transaction.id,
+          amount,
+          notes: "",
+          saved_date: todayString,
+        }))
+      );
+    } catch {
+      Alert.alert("Save all failed", "Failed to save all statement items. Please try again.");
+    } finally {
+      setSavingGroupKey(null);
+      setSavingTransactionIds([]);
+    }
+  };
 
   const handleTogglePaidTxn = (
     txn: Transaction,
@@ -412,20 +466,28 @@ export default function TransactionsScreen() {
                 onPayAll={(regularIds, installmentItems) =>
                   markGroupPaid(regularIds, installmentItems)
                 }
+                onSaveAll={handleSaveGroup}
                 onPressTxn={(txn) => setSavingTarget(txn)}
                 onDeleteTxn={(txn) => setDeleteTarget(txn)}
                 onTogglePaidTxn={(txn, isPaidForPeriod) =>
                   handleTogglePaidTxn(txn, group, isPaidForPeriod)
                 }
+                onSaveTxn={handleSaveTransaction}
+                savingAll={savingGroupKey === group.key}
+                savingTransactionIds={savingTransactionIds}
               />
             ))}
             <PaidStatementsSection
               groups={paidStatements}
+              onSaveAll={handleSaveGroup}
               onPressTxn={(txn) => setSavingTarget(txn)}
               onDeleteTxn={(txn) => setDeleteTarget(txn)}
               onTogglePaidTxn={(txn, group, isPaidForPeriod) => {
                 handleTogglePaidTxn(txn, group, isPaidForPeriod);
               }}
+              onSaveTxn={handleSaveTransaction}
+              savingGroupKey={savingGroupKey}
+              savingTransactionIds={savingTransactionIds}
             />
           </ScrollView>
         )}

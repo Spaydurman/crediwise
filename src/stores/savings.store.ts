@@ -14,6 +14,7 @@ interface SavingsState {
   error: string | null;
   fetchSavings: () => Promise<void>;
   addSaving: (input: AddSavingInput) => Promise<Saving>;
+  addSavings: (inputs: AddSavingInput[]) => Promise<Saving[]>;
   deleteSaving: (id: string) => Promise<void>;
   reset: () => void;
 }
@@ -55,6 +56,24 @@ export const useSavingsStore = create<SavingsState>((set) => ({
     if (error) throw error;
     set((state) => ({ savings: [data as Saving, ...state.savings] }));
     return data as Saving;
+  },
+
+  addSavings: async (inputs) => {
+    if (inputs.length === 0) return [];
+
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error("Not authenticated");
+
+    const { data, error } = await supabase
+      .from("savings")
+      .insert(inputs.map((input) => ({ ...input, user_id: user.id })))
+      .select(SAVING_SELECT);
+
+    if (error) throw error;
+
+    const createdSavings = (data as Saving[]) ?? [];
+    set((state) => ({ savings: [...createdSavings, ...state.savings] }));
+    return createdSavings;
   },
 
   deleteSaving: async (id) => {

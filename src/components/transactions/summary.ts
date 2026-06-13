@@ -15,6 +15,21 @@ export function getStatementTransactionAmount(
     : transaction.amount;
 }
 
+export function getTransactionSavedAmount(
+  transaction: BillingGroup["transactions"][number]
+) {
+  return transaction.total_saved ?? 0;
+}
+
+export function getTransactionRemainingAmount(
+  transaction: BillingGroup["transactions"][number]
+) {
+  return transaction.remaining ?? Math.max(
+    0,
+    getStatementTransactionAmount(transaction) - getTransactionSavedAmount(transaction)
+  );
+}
+
 export function getBillingGroupSummary(group: BillingGroup): BillingGroupSummary {
   return group.transactions.reduce<BillingGroupSummary>(
     (summary, transaction) => {
@@ -23,9 +38,9 @@ export function getBillingGroupSummary(group: BillingGroup): BillingGroupSummary
       return {
         itemCount: summary.itemCount + 1,
         statementTotal: summary.statementTotal + trackableAmount,
-        statementSaved: summary.statementSaved + (transaction.total_saved ?? 0),
+        statementSaved: summary.statementSaved + getTransactionSavedAmount(transaction),
         statementShortage:
-          summary.statementShortage + (transaction.remaining ?? trackableAmount),
+          summary.statementShortage + getTransactionRemainingAmount(transaction),
       };
     },
     {

@@ -10,10 +10,12 @@ export function useSavings(transactionId?: string) {
     error,
     fetchSavings,
     addSaving: storeAddSaving,
+    addSavings: storeAddSavings,
     deleteSaving: storeDeleteSaving,
   } = useSavingsStore();
 
-  const { fetchTransactions } = useTransactionsStore();
+  const { addSavingsToTransactions, removeSavingFromTransaction } =
+    useTransactionsStore();
 
   useEffect(() => {
     fetchSavings();
@@ -29,13 +31,26 @@ export function useSavings(transactionId?: string) {
 
   const addSaving = async (input: AddSavingInput): Promise<Saving> => {
     const result = await storeAddSaving(input);
-    await fetchTransactions();
+    addSavingsToTransactions([result]);
+    return result;
+  };
+
+  const addSavings = async (inputs: AddSavingInput[]): Promise<Saving[]> => {
+    if (inputs.length === 0) return [];
+
+    const result = await storeAddSavings(inputs);
+    addSavingsToTransactions(result);
     return result;
   };
 
   const deleteSaving = async (id: string): Promise<void> => {
+    const savingToRemove = allSavings.find((saving) => saving.id === id);
+
     await storeDeleteSaving(id);
-    await fetchTransactions();
+
+    if (savingToRemove) {
+      removeSavingFromTransaction(id, savingToRemove.transaction_id);
+    }
   };
 
   const totalSaved = savings.reduce((sum, s) => sum + s.amount, 0);
@@ -46,6 +61,7 @@ export function useSavings(transactionId?: string) {
     error,
     totalSaved,
     addSaving,
+    addSavings,
     deleteSaving,
     refetch: fetchSavings,
   };

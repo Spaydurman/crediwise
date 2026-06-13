@@ -8,6 +8,7 @@ import type { BillingGroup } from "./types";
 
 interface PaidStatementsSectionProps {
   groups: BillingGroup[];
+  onSaveAll?: (group: BillingGroup) => Promise<void> | void;
   onPressTxn: (txn: BillingGroup["transactions"][0]) => void;
   onDeleteTxn: (txn: BillingGroup["transactions"][0]) => void;
   onTogglePaidTxn: (
@@ -15,24 +16,36 @@ interface PaidStatementsSectionProps {
     group: BillingGroup,
     isPaidForPeriod: boolean
   ) => void;
+  onSaveTxn?: (txn: BillingGroup["transactions"][0]) => void;
+  savingGroupKey?: string | null;
+  savingTransactionIds?: string[];
 }
 
 interface PaidStatementCardProps {
   group: BillingGroup;
+  onSaveAll?: PaidStatementsSectionProps["onSaveAll"];
   onPressTxn: PaidStatementsSectionProps["onPressTxn"];
   onDeleteTxn: PaidStatementsSectionProps["onDeleteTxn"];
   onTogglePaidTxn: PaidStatementsSectionProps["onTogglePaidTxn"];
+  onSaveTxn?: PaidStatementsSectionProps["onSaveTxn"];
+  savingGroupKey?: string | null;
+  savingTransactionIds?: string[];
 }
 
 function PaidStatementCard({
   group,
+  onSaveAll,
   onPressTxn,
   onDeleteTxn,
   onTogglePaidTxn,
+  onSaveTxn,
+  savingGroupKey,
+  savingTransactionIds = [],
 }: PaidStatementCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { itemCount, statementTotal, statementSaved, statementShortage } =
     getBillingGroupSummary(group);
+  const allSaved = statementShortage <= 0;
 
   return (
     <View className="gap-1.5">
@@ -43,6 +56,9 @@ function PaidStatementCard({
         statementSaved={statementSaved}
         statementShortage={statementShortage}
         allPaid
+        allSaved={allSaved}
+        savingAll={savingGroupKey === group.key}
+        onSaveAll={onSaveAll ? () => onSaveAll(group) : undefined}
         expanded={expanded}
         onToggleExpanded={() => setExpanded((value) => !value)}
       />
@@ -64,6 +80,8 @@ function PaidStatementCard({
               onPress={() => onPressTxn(txn)}
               onDelete={() => onDeleteTxn(txn)}
               onTogglePaid={() => onTogglePaidTxn(txn, group, isPaidForPeriod)}
+              onSave={onSaveTxn ? () => onSaveTxn(txn) : undefined}
+              saving={savingTransactionIds.includes(txn.id)}
             />
           );
         })}
@@ -73,9 +91,13 @@ function PaidStatementCard({
 
 export function PaidStatementsSection({
   groups,
+  onSaveAll,
   onPressTxn,
   onDeleteTxn,
   onTogglePaidTxn,
+  onSaveTxn,
+  savingGroupKey = null,
+  savingTransactionIds = [],
 }: PaidStatementsSectionProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -106,9 +128,13 @@ export function PaidStatementsSection({
           <PaidStatementCard
             key={group.key}
             group={group}
+            onSaveAll={onSaveAll}
             onPressTxn={onPressTxn}
             onDeleteTxn={onDeleteTxn}
             onTogglePaidTxn={onTogglePaidTxn}
+            onSaveTxn={onSaveTxn}
+            savingGroupKey={savingGroupKey}
+            savingTransactionIds={savingTransactionIds}
           />
         ))}
     </View>

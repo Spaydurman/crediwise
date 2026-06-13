@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { CARD_COLOR_BG_MAP, CARD_COLOR_ICON_MAP, CURRENCY, DATE_FORMAT } from "../../constants";
 import { useThemeStore } from "../../stores/theme.store";
 import type { Transaction } from "../../types";
 import { Badge } from "../ui/Badge";
+import { getStatementTransactionAmount, getTransactionRemainingAmount } from "./summary";
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -13,6 +14,8 @@ interface TransactionItemProps {
   onPress?: () => void;
   onDelete?: () => void;
   onTogglePaid?: () => void;
+  onSave?: () => void;
+  saving?: boolean;
 }
 
 function getSavingsVariant(
@@ -42,11 +45,13 @@ export function TransactionItem({
   onPress,
   onDelete,
   onTogglePaid,
+  onSave,
+  saving = false,
 }: TransactionItemProps) {
   const isDark = useThemeStore((state) => state.themeMode === "dark");
   const isSubscription = transaction.is_subscription;
   const totalSaved = transaction.total_saved ?? 0;
-  const remaining = transaction.remaining ?? transaction.amount;
+  const remaining = getTransactionRemainingAmount(transaction);
   const isFullySaved = transaction.is_fully_saved ?? false;
   const cardColor = transaction.credit_card?.color ?? "indigo";
   const cardBgClass = CARD_COLOR_BG_MAP[cardColor];
@@ -61,10 +66,8 @@ export function TransactionItem({
   const savingsVariant = getSavingsVariant(isFullySaved, remaining, totalSaved);
   const savingsLabel = getSavingsLabel(isFullySaved, remaining, totalSaved);
 
-  const trackableAmount =
-    transaction.is_installment && transaction.monthly_amount
-      ? transaction.monthly_amount
-      : transaction.amount;
+  const trackableAmount = getStatementTransactionAmount(transaction);
+  const showSaveAction = Boolean(onSave) && remaining > 0;
 
   const progressPercent =
     trackableAmount > 0
@@ -172,8 +175,32 @@ export function TransactionItem({
         </View>
       </View>
 
-      {(onDelete || onTogglePaid) && (
+      {(showSaveAction || onDelete || onTogglePaid) && (
         <View className="flex-row justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-2">
+          {showSaveAction && (
+            <Pressable
+              onPress={saving ? undefined : onSave}
+              disabled={saving}
+              className={`flex-row items-center gap-1 px-3 py-1 rounded-lg ${
+                saving
+                  ? "bg-indigo-100 dark:bg-indigo-900/40"
+                  : "active:bg-indigo-50 dark:active:bg-indigo-900/30"
+              }`}
+            >
+              {saving ? (
+                <ActivityIndicator size={14} color={isDark ? "#a5b4fc" : "#4338ca"} />
+              ) : (
+                <Ionicons
+                  name="wallet-outline"
+                  size={14}
+                  color={isDark ? "#a5b4fc" : "#4338ca"}
+                />
+              )}
+              <Text className="text-indigo-700 dark:text-indigo-300 text-xs font-medium">
+                {saving ? "Saving..." : "Save"}
+              </Text>
+            </Pressable>
+          )}
           {onTogglePaid && (
             <Pressable
               onPress={onTogglePaid}
@@ -197,13 +224,15 @@ export function TransactionItem({
               </Text>
             </Pressable>
           )}
-          <Pressable
-            onPress={onDelete}
-            className="flex-row items-center gap-1 px-3 py-1 rounded-lg active:bg-red-50 dark:active:bg-red-900/30"
-          >
-            <Ionicons name="trash-outline" size={14} color={isDark ? "#f87171" : "#dc2626"} />
-            <Text className="text-red-700 dark:text-red-400 text-xs font-medium">Delete</Text>
-          </Pressable>
+          {onDelete && (
+            <Pressable
+              onPress={onDelete}
+              className="flex-row items-center gap-1 px-3 py-1 rounded-lg active:bg-red-50 dark:active:bg-red-900/30"
+            >
+              <Ionicons name="trash-outline" size={14} color={isDark ? "#f87171" : "#dc2626"} />
+              <Text className="text-red-700 dark:text-red-400 text-xs font-medium">Delete</Text>
+            </Pressable>
+          )}
         </View>
       )}
     </Pressable>

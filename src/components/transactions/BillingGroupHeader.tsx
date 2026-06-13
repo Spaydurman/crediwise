@@ -12,9 +12,12 @@ interface BillingGroupHeaderProps {
   statementSaved: number;
   statementShortage: number;
   allPaid: boolean;
+  allSaved: boolean;
   paying?: boolean;
+  savingAll?: boolean;
   expanded?: boolean;
   onPayAll?: () => void;
+  onSaveAll?: () => void;
   onToggleExpanded?: () => void;
 }
 
@@ -25,8 +28,11 @@ export function BillingGroupHeader({
   statementSaved,
   statementShortage,
   allPaid,
+  allSaved,
   paying = false,
+  savingAll = false,
   onPayAll,
+  onSaveAll,
   expanded = true,
   onToggleExpanded,
 }: BillingGroupHeaderProps) {
@@ -161,29 +167,57 @@ export function BillingGroupHeader({
               {expanded ? "Items shown" : "Items hidden"}
             </Text>
           </View>
-          {!allPaid ? (
-            <Pressable
-              onPress={paying || !onPayAll ? undefined : onPayAll}
-              disabled={paying || !onPayAll}
-              className={`flex-row items-center gap-1.5 border rounded-xl px-3 py-2 ${
-                paying || !onPayAll
-                  ? "bg-emerald-100 border-emerald-200 dark:bg-emerald-900/60 dark:border-emerald-700/50"
-                  : "bg-emerald-50 border-emerald-200 active:bg-emerald-100 dark:bg-emerald-700 dark:border-emerald-600 dark:active:bg-emerald-800"
-              }`}
-            >
-              {paying ? (
-                <ActivityIndicator size={15} color={isDark ? "#ffffff" : "#047857"} />
-              ) : (
-                <Ionicons name="checkmark-done" size={15} color={isDark ? "#ffffff" : "#047857"} />
-              )}
-              <Text className="text-emerald-700 dark:text-white text-xs font-semibold">Pay All</Text>
-            </Pressable>
-          ) : (
-            <View className="flex-row items-center gap-1.5 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-700 rounded-xl px-3 py-2">
-              <Ionicons name="checkmark-done" size={15} color={isDark ? "#34d399" : "#047857"} />
-              <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold">All Paid</Text>
-            </View>
-          )}
+          <View className="flex-row items-center gap-2">
+            {allSaved ? (
+              <View className="flex-row items-center gap-1.5 bg-indigo-50 border border-indigo-200 dark:bg-indigo-950/50 dark:border-indigo-700 rounded-xl px-3 py-2">
+                <Ionicons name="wallet-outline" size={15} color={isDark ? "#a5b4fc" : "#4338ca"} />
+                <Text className="text-indigo-700 dark:text-indigo-300 text-xs font-semibold">All Saved</Text>
+              </View>
+            ) : onSaveAll ? (
+              <Pressable
+                onPress={savingAll ? undefined : onSaveAll}
+                disabled={savingAll}
+                className={`flex-row items-center gap-1.5 border rounded-xl px-3 py-2 ${
+                  savingAll
+                    ? "bg-indigo-100 border-indigo-200 dark:bg-indigo-900/60 dark:border-indigo-700/50"
+                    : "bg-indigo-50 border-indigo-200 active:bg-indigo-100 dark:bg-indigo-700 dark:border-indigo-600 dark:active:bg-indigo-800"
+                }`}
+              >
+                {savingAll ? (
+                  <ActivityIndicator size={15} color={isDark ? "#ffffff" : "#4338ca"} />
+                ) : (
+                  <Ionicons name="wallet-outline" size={15} color={isDark ? "#ffffff" : "#4338ca"} />
+                )}
+                <Text className="text-indigo-700 dark:text-white text-xs font-semibold">
+                  {savingAll ? "Saving..." : "Save All"}
+                </Text>
+              </Pressable>
+            ) : null}
+
+            {!allPaid ? (
+              <Pressable
+                onPress={paying || !onPayAll ? undefined : onPayAll}
+                disabled={paying || !onPayAll}
+                className={`flex-row items-center gap-1.5 border rounded-xl px-3 py-2 ${
+                  paying || !onPayAll
+                    ? "bg-emerald-100 border-emerald-200 dark:bg-emerald-900/60 dark:border-emerald-700/50"
+                    : "bg-emerald-50 border-emerald-200 active:bg-emerald-100 dark:bg-emerald-700 dark:border-emerald-600 dark:active:bg-emerald-800"
+                }`}
+              >
+                {paying ? (
+                  <ActivityIndicator size={15} color={isDark ? "#ffffff" : "#047857"} />
+                ) : (
+                  <Ionicons name="checkmark-done" size={15} color={isDark ? "#ffffff" : "#047857"} />
+                )}
+                <Text className="text-emerald-700 dark:text-white text-xs font-semibold">Pay All</Text>
+              </Pressable>
+            ) : (
+              <View className="flex-row items-center gap-1.5 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-700 rounded-xl px-3 py-2">
+                <Ionicons name="checkmark-done" size={15} color={isDark ? "#34d399" : "#047857"} />
+                <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold">All Paid</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </View>
