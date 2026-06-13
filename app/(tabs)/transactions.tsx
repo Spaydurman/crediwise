@@ -314,9 +314,6 @@ export default function TransactionsScreen() {
               ) : (
                 <Ionicons name="scan-outline" size={18} color={scanAccentColor} />
               )}
-              <Text className="text-teal-700 dark:text-white text-sm font-semibold">
-                {scanning ? "Scanning" : "Scan"}
-              </Text>
             </Pressable>
             <Pressable
               onPress={openManualAdd}
