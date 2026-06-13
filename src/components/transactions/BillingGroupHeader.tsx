@@ -196,10 +196,10 @@ export function BillingGroupHeader({
 
             {!allPaid ? (
               <Pressable
-                onPress={paying || !onPayAll ? undefined : onPayAll}
-                disabled={paying || !onPayAll}
+                onPress={paying || savingAll || !onPayAll ? undefined : onPayAll}
+                disabled={paying || savingAll || !onPayAll}
                 className={`flex-row items-center gap-1.5 border rounded-xl px-3 py-2 ${
-                  paying || !onPayAll
+                  paying || savingAll || !onPayAll
                     ? "bg-emerald-100 border-emerald-200 dark:bg-emerald-900/60 dark:border-emerald-700/50"
                     : "bg-emerald-50 border-emerald-200 active:bg-emerald-100 dark:bg-emerald-700 dark:border-emerald-600 dark:active:bg-emerald-800"
                 }`}

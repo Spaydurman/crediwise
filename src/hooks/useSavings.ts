@@ -12,9 +12,14 @@ export function useSavings(transactionId?: string) {
     addSaving: storeAddSaving,
     addSavings: storeAddSavings,
     deleteSaving: storeDeleteSaving,
+    deleteSavings: storeDeleteSavings,
   } = useSavingsStore();
 
-  const { addSavingsToTransactions, removeSavingFromTransaction } =
+  const {
+    addSavingsToTransactions,
+    removeSavingFromTransaction,
+    removeSavingsFromTransactions,
+  } =
     useTransactionsStore();
 
   useEffect(() => {
@@ -53,6 +58,19 @@ export function useSavings(transactionId?: string) {
     }
   };
 
+  const deleteSavings = async (ids: string[]): Promise<void> => {
+    if (ids.length === 0) return;
+
+    const idsSet = new Set(ids);
+    const savingsToRemove = allSavings.filter((saving) => idsSet.has(saving.id));
+
+    await storeDeleteSavings(ids);
+
+    if (savingsToRemove.length > 0) {
+      removeSavingsFromTransactions(savingsToRemove);
+    }
+  };
+
   const totalSaved = savings.reduce((sum, s) => sum + s.amount, 0);
 
   return {
@@ -63,6 +81,7 @@ export function useSavings(transactionId?: string) {
     addSaving,
     addSavings,
     deleteSaving,
+    deleteSavings,
     refetch: fetchSavings,
   };
 }

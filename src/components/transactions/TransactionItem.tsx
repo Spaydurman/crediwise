@@ -15,7 +15,9 @@ interface TransactionItemProps {
   onDelete?: () => void;
   onTogglePaid?: () => void;
   onSave?: () => void;
+  onWithdraw?: () => void;
   saving?: boolean;
+  withdrawing?: boolean;
 }
 
 function getSavingsVariant(
@@ -46,7 +48,9 @@ export function TransactionItem({
   onDelete,
   onTogglePaid,
   onSave,
+  onWithdraw,
   saving = false,
+  withdrawing = false,
 }: TransactionItemProps) {
   const isDark = useThemeStore((state) => state.themeMode === "dark");
   const isSubscription = transaction.is_subscription;
@@ -68,6 +72,7 @@ export function TransactionItem({
 
   const trackableAmount = getStatementTransactionAmount(transaction);
   const showSaveAction = Boolean(onSave) && remaining > 0;
+  const showWithdrawAction = Boolean(onWithdraw) && totalSaved > 0;
 
   const progressPercent =
     trackableAmount > 0
@@ -175,14 +180,14 @@ export function TransactionItem({
         </View>
       </View>
 
-      {(showSaveAction || onDelete || onTogglePaid) && (
+      {(showSaveAction || showWithdrawAction || onDelete || onTogglePaid) && (
         <View className="flex-row justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-2">
           {showSaveAction && (
             <Pressable
-              onPress={saving ? undefined : onSave}
-              disabled={saving}
+              onPress={saving || withdrawing ? undefined : onSave}
+              disabled={saving || withdrawing}
               className={`flex-row items-center gap-1 px-3 py-1 rounded-lg ${
-                saving
+                saving || withdrawing
                   ? "bg-indigo-100 dark:bg-indigo-900/40"
                   : "active:bg-indigo-50 dark:active:bg-indigo-900/30"
               }`}
@@ -198,6 +203,30 @@ export function TransactionItem({
               )}
               <Text className="text-indigo-700 dark:text-indigo-300 text-xs font-medium">
                 {saving ? "Saving..." : "Save"}
+              </Text>
+            </Pressable>
+          )}
+          {showWithdrawAction && (
+            <Pressable
+              onPress={saving || withdrawing ? undefined : onWithdraw}
+              disabled={saving || withdrawing}
+              className={`flex-row items-center gap-1 px-3 py-1 rounded-lg ${
+                saving || withdrawing
+                  ? "bg-rose-100 dark:bg-rose-900/30"
+                  : "active:bg-rose-50 dark:active:bg-rose-900/20"
+              }`}
+            >
+              {withdrawing ? (
+                <ActivityIndicator size={14} color={isDark ? "#fda4af" : "#e11d48"} />
+              ) : (
+                <Ionicons
+                  name="refresh-outline"
+                  size={14}
+                  color={isDark ? "#fda4af" : "#e11d48"}
+                />
+              )}
+              <Text className="text-rose-700 dark:text-rose-300 text-xs font-medium">
+                {withdrawing ? "Withdrawing..." : "Withdraw"}
               </Text>
             </Pressable>
           )}

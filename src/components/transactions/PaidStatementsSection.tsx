@@ -17,8 +17,10 @@ interface PaidStatementsSectionProps {
     isPaidForPeriod: boolean
   ) => void;
   onSaveTxn?: (txn: BillingGroup["transactions"][0]) => void;
+  onWithdrawTxn?: (txn: BillingGroup["transactions"][0]) => void;
   savingGroupKey?: string | null;
   savingTransactionIds?: string[];
+  withdrawingTransactionIds?: string[];
 }
 
 interface PaidStatementCardProps {
@@ -28,8 +30,10 @@ interface PaidStatementCardProps {
   onDeleteTxn: PaidStatementsSectionProps["onDeleteTxn"];
   onTogglePaidTxn: PaidStatementsSectionProps["onTogglePaidTxn"];
   onSaveTxn?: PaidStatementsSectionProps["onSaveTxn"];
+  onWithdrawTxn?: PaidStatementsSectionProps["onWithdrawTxn"];
   savingGroupKey?: string | null;
   savingTransactionIds?: string[];
+  withdrawingTransactionIds?: string[];
 }
 
 function PaidStatementCard({
@@ -39,8 +43,10 @@ function PaidStatementCard({
   onDeleteTxn,
   onTogglePaidTxn,
   onSaveTxn,
+  onWithdrawTxn,
   savingGroupKey,
   savingTransactionIds = [],
+  withdrawingTransactionIds = [],
 }: PaidStatementCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { itemCount, statementTotal, statementSaved, statementShortage } =
@@ -81,7 +87,9 @@ function PaidStatementCard({
               onDelete={() => onDeleteTxn(txn)}
               onTogglePaid={() => onTogglePaidTxn(txn, group, isPaidForPeriod)}
               onSave={onSaveTxn ? () => onSaveTxn(txn) : undefined}
+              onWithdraw={onWithdrawTxn ? () => onWithdrawTxn(txn) : undefined}
               saving={savingTransactionIds.includes(txn.id)}
+              withdrawing={withdrawingTransactionIds.includes(txn.id)}
             />
           );
         })}
@@ -96,8 +104,10 @@ export function PaidStatementsSection({
   onDeleteTxn,
   onTogglePaidTxn,
   onSaveTxn,
+  onWithdrawTxn,
   savingGroupKey = null,
   savingTransactionIds = [],
+  withdrawingTransactionIds = [],
 }: PaidStatementsSectionProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -133,8 +143,10 @@ export function PaidStatementsSection({
             onDeleteTxn={onDeleteTxn}
             onTogglePaidTxn={onTogglePaidTxn}
             onSaveTxn={onSaveTxn}
+            onWithdrawTxn={onWithdrawTxn}
             savingGroupKey={savingGroupKey}
             savingTransactionIds={savingTransactionIds}
+            withdrawingTransactionIds={withdrawingTransactionIds}
           />
         ))}
     </View>

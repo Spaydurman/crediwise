@@ -16,8 +16,10 @@ interface BillingGroupCardProps {
   onDeleteTxn: (txn: BillingGroup["transactions"][0]) => void;
   onTogglePaidTxn: (txn: BillingGroup["transactions"][0], isPaidForPeriod: boolean) => void;
   onSaveTxn?: (txn: BillingGroup["transactions"][0]) => void;
+  onWithdrawTxn?: (txn: BillingGroup["transactions"][0]) => void;
   savingAll?: boolean;
   savingTransactionIds?: string[];
+  withdrawingTransactionIds?: string[];
 }
 
 export function BillingGroupCard({
@@ -28,8 +30,10 @@ export function BillingGroupCard({
   onDeleteTxn,
   onTogglePaidTxn,
   onSaveTxn,
+  onWithdrawTxn,
   savingAll = false,
   savingTransactionIds = [],
+  withdrawingTransactionIds = [],
 }: BillingGroupCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -90,7 +94,9 @@ export function BillingGroupCard({
             onDelete={() => onDeleteTxn(txn)}
             onTogglePaid={() => onTogglePaidTxn(txn, isPaidForPeriod)}
             onSave={onSaveTxn ? () => onSaveTxn(txn) : undefined}
+            onWithdraw={onWithdrawTxn ? () => onWithdrawTxn(txn) : undefined}
             saving={savingTransactionIds.includes(txn.id)}
+            withdrawing={withdrawingTransactionIds.includes(txn.id)}
           />
         );
       })}

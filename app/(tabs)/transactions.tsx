@@ -47,7 +47,7 @@ export default function TransactionsScreen() {
     toggleInstallmentPeriodPaid,
     markGroupPaid,
   } = useTransactions();
-  const { addSaving, addSavings } = useSavings();
+  const { addSaving, addSavings, deleteSavings } = useSavings();
 
   const [selectedCardFilter, setSelectedCardFilter] = useState<string | null>(null);
   const [showAddTxn, setShowAddTxn] = useState(false);
@@ -58,6 +58,9 @@ export default function TransactionsScreen() {
   const [savingTarget, setSavingTarget] = useState<Transaction | null>(null);
   const [savingTransactionIds, setSavingTransactionIds] = useState<string[]>([]);
   const [savingGroupKey, setSavingGroupKey] = useState<string | null>(null);
+  const [withdrawTarget, setWithdrawTarget] = useState<Transaction | null>(null);
+  const [withdrawingTransactionIds, setWithdrawingTransactionIds] = useState<string[]>([]);
+  const [withdrawing, setWithdrawing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -217,7 +220,12 @@ export default function TransactionsScreen() {
 
   const handleSaveTransaction = async (transaction: Transaction) => {
     const remaining = getTransactionRemainingAmount(transaction);
-    if (remaining <= 0 || savingTransactionIds.length > 0 || savingGroupKey) return;
+    if (
+      remaining <= 0 ||
+      savingTransactionIds.length > 0 ||
+      savingGroupKey ||
+      withdrawingTransactionIds.length > 0
+    ) return;
 
     setSavingTransactionIds([transaction.id]);
     try {
@@ -235,7 +243,11 @@ export default function TransactionsScreen() {
   };
 
   const handleSaveGroup = async (group: BillingGroup) => {
-    if (savingTransactionIds.length > 0 || savingGroupKey) return;
+    if (
+      savingTransactionIds.length > 0 ||
+      savingGroupKey ||
+      withdrawingTransactionIds.length > 0
+    ) return;
 
     const savingsToCreate = group.transactions
       .map((transaction) => ({
@@ -262,6 +274,33 @@ export default function TransactionsScreen() {
     } finally {
       setSavingGroupKey(null);
       setSavingTransactionIds([]);
+    }
+  };
+
+  const handleRequestWithdrawTransaction = (transaction: Transaction) => {
+    if ((transaction.savings?.length ?? 0) === 0) return;
+    setWithdrawTarget(transaction);
+  };
+
+  const handleWithdrawTransaction = async () => {
+    if (!withdrawTarget || withdrawing || savingTransactionIds.length > 0 || savingGroupKey) return;
+
+    const savingIds = (withdrawTarget.savings ?? []).map((saving) => saving.id);
+    if (savingIds.length === 0) {
+      setWithdrawTarget(null);
+      return;
+    }
+
+    setWithdrawing(true);
+    setWithdrawingTransactionIds([withdrawTarget.id]);
+    try {
+      await deleteSavings(savingIds);
+      setWithdrawTarget(null);
+    } catch {
+      Alert.alert("Withdraw failed", "Failed to withdraw saved amounts. Please try again.");
+    } finally {
+      setWithdrawing(false);
+      setWithdrawingTransactionIds([]);
     }
   };
 
@@ -473,8 +512,10 @@ export default function TransactionsScreen() {
                   handleTogglePaidTxn(txn, group, isPaidForPeriod)
                 }
                 onSaveTxn={handleSaveTransaction}
+                onWithdrawTxn={handleRequestWithdrawTransaction}
                 savingAll={savingGroupKey === group.key}
                 savingTransactionIds={savingTransactionIds}
+                withdrawingTransactionIds={withdrawingTransactionIds}
               />
             ))}
             <PaidStatementsSection
@@ -486,8 +527,10 @@ export default function TransactionsScreen() {
                 handleTogglePaidTxn(txn, group, isPaidForPeriod);
               }}
               onSaveTxn={handleSaveTransaction}
+              onWithdrawTxn={handleRequestWithdrawTransaction}
               savingGroupKey={savingGroupKey}
               savingTransactionIds={savingTransactionIds}
+              withdrawingTransactionIds={withdrawingTransactionIds}
             />
           </ScrollView>
         )}
@@ -518,6 +561,18 @@ export default function TransactionsScreen() {
         onClose={() => setSavingTarget(null)}
         onAdd={async (data: AddSavingInput) => { await addSaving(data); }}
         transaction={savingTarget}
+      />
+      <ConfirmModal
+        visible={withdrawTarget !== null}
+        title="Withdraw Saved Amount"
+        message={`Withdraw all saved amounts for "${withdrawTarget?.description}" so you can save it again?`}
+        confirmLabel="Withdraw"
+        onConfirm={handleWithdrawTransaction}
+        onCancel={() => {
+          if (withdrawing) return;
+          setWithdrawTarget(null);
+        }}
+        loading={withdrawing}
       />
       <ConfirmModal
         visible={deleteTarget !== null}

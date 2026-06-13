@@ -73,6 +73,9 @@ interface TransactionsState {
   deleteTransaction: (id: string) => Promise<void>;
   addSavingsToTransactions: (savings: Saving[]) => void;
   removeSavingFromTransaction: (savingId: string, transactionId: string) => void;
+  removeSavingsFromTransactions: (
+    savings: Pick<Saving, "id" | "transaction_id">[]
+  ) => void;
   togglePaid: (id: string, isPaid: boolean) => Promise<void>;
   setSubscriptionActive: (id: string, active: boolean) => Promise<void>;
   toggleInstallmentPeriodPaid: (transactionId: string, periodKey: string, paid: boolean) => Promise<void>;
@@ -166,15 +169,31 @@ export const useTransactionsStore = create<TransactionsState>((set, get) => ({
   },
 
   removeSavingFromTransaction: (savingId, transactionId) => {
+    get().removeSavingsFromTransactions([{ id: savingId, transaction_id: transactionId }]);
+  },
+
+  removeSavingsFromTransactions: (savings) => {
+    if (savings.length === 0) return;
+
+    const savingsIdsByTransactionId = new Map<string, Set<string>>();
+
+    for (const saving of savings) {
+      const existingIds = savingsIdsByTransactionId.get(saving.transaction_id) ?? new Set<string>();
+      existingIds.add(saving.id);
+      savingsIdsByTransactionId.set(saving.transaction_id, existingIds);
+    }
+
     set((state) => ({
       transactions: state.transactions.map((transaction) => {
-        if (transaction.id !== transactionId) {
+        const savingIds = savingsIdsByTransactionId.get(transaction.id);
+
+        if (!savingIds) {
           return transaction;
         }
 
         return enrichTransaction({
           ...transaction,
-          savings: (transaction.savings ?? []).filter((saving) => saving.id !== savingId),
+          savings: (transaction.savings ?? []).filter((saving) => !savingIds.has(saving.id)),
         });
       }),
     }));

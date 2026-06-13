@@ -16,6 +16,7 @@ interface SavingsState {
   addSaving: (input: AddSavingInput) => Promise<Saving>;
   addSavings: (inputs: AddSavingInput[]) => Promise<Saving[]>;
   deleteSaving: (id: string) => Promise<void>;
+  deleteSavings: (ids: string[]) => Promise<void>;
   reset: () => void;
 }
 
@@ -85,6 +86,22 @@ export const useSavingsStore = create<SavingsState>((set) => ({
     if (error) throw error;
     set((state) => ({
       savings: state.savings.filter((s) => s.id !== id),
+    }));
+  },
+
+  deleteSavings: async (ids) => {
+    if (ids.length === 0) return;
+
+    const { error } = await supabase
+      .from("savings")
+      .delete()
+      .in("id", ids);
+
+    if (error) throw error;
+
+    const idsSet = new Set(ids);
+    set((state) => ({
+      savings: state.savings.filter((saving) => !idsSet.has(saving.id)),
     }));
   },
 
