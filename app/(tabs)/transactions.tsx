@@ -31,9 +31,86 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { getBillingPeriod } from "@/lib/billing";
 import { scanReceipt, type ReceiptSource } from "@/lib/receiptOcr";
 import { useThemeStore } from "@/stores/theme.store";
-import type { AddSavingInput, AddTransactionInput, Transaction } from "@/types";
+import type { AddSavingInput, AddTransactionInput, Saving, Transaction } from "@/types";
 
 const MAX_RECURRING_PERIODS = 240;
+
+function getClampedMonthDate(year: number, month: number, day: number) {
+  const monthStart = new Date(year, month, 1);
+  const targetYear = monthStart.getFullYear();
+  const targetMonth = monthStart.getMonth();
+  const lastDayOfMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+  return new Date(targetYear, targetMonth, Math.min(day, lastDayOfMonth));
+}
+
+function getRecurringSavingPeriodKey(
+  savedDate: string,
+  statementDay: number,
+  billingDay: number
+) {
+  const savingDate = parseISO(savedDate);
+  const currentDueDate = getClampedMonthDate(
+    savingDate.getFullYear(),
+    savingDate.getMonth(),
+    billingDay
+  );
+  const targetDueDate = savingDate > currentDueDate
+    ? getClampedMonthDate(savingDate.getFullYear(), savingDate.getMonth() + 1, billingDay)
+    : currentDueDate;
+  const statementDate = getClampedMonthDate(
+    targetDueDate.getFullYear(),
+    targetDueDate.getMonth() - 1,
+    statementDay
+  );
+
+  return `${statementDate.getFullYear()}-${String(statementDate.getMonth() + 1).padStart(2, "0")}-${String(statementDate.getDate()).padStart(2, "0")}`;
+}
+
+function getRecurringSavingsForPeriod(
+  savings: Saving[] | undefined,
+  statementDay: number,
+  billingDay: number,
+  periodKey: string
+) {
+  return (savings ?? []).filter((saving) => {
+    const savingPeriodKey = getRecurringSavingPeriodKey(
+      saving.saved_date,
+      statementDay,
+      billingDay
+    );
+
+    return savingPeriodKey === periodKey;
+  });
+}
+
+function getRecurringTransactionForPeriod(
+  transaction: Transaction,
+  statementDay: number,
+  billingDay: number,
+  periodKey: string
+): Transaction {
+  const periodSavings = getRecurringSavingsForPeriod(
+    transaction.savings,
+    statementDay,
+    billingDay,
+    periodKey
+  );
+  const totalSaved = periodSavings.reduce((sum, saving) => sum + saving.amount, 0);
+  const trackableAmount =
+    transaction.is_installment && transaction.monthly_amount
+      ? transaction.monthly_amount
+      : transaction.amount;
+  const remaining = Math.max(0, trackableAmount - totalSaved);
+
+  return {
+    ...transaction,
+    savings: periodSavings,
+    total_saved: totalSaved,
+    remaining,
+    is_fully_saved: remaining === 0,
+  };
+}
 
 export default function TransactionsScreen() {
   const { cards } = useCards();
@@ -101,7 +178,20 @@ export default function TransactionsScreen() {
           transactions: [],
         });
       }
-      groupMap.get(groupKey)!.transactions.push(txn);
+
+      const statementDay =
+        card.statement_date ??
+        Math.max(1, Math.min(28, card.billing_cycle_date - 5));
+      const groupTransaction = txn.is_installment || txn.is_subscription
+        ? getRecurringTransactionForPeriod(
+            txn,
+            statementDay,
+            card.billing_cycle_date,
+            periodKey
+          )
+        : txn;
+
+      groupMap.get(groupKey)!.transactions.push(groupTransaction);
     };
 
     for (const txn of filteredTransactions) {
@@ -202,19 +292,20 @@ export default function TransactionsScreen() {
         ),
       0
     );
-    // Saved/shortage: deduplicate per transaction since total_saved/remaining are per-transaction metrics
-    const seenIds = new Set<string>();
-    let saved = 0;
-    let shortage = 0;
-    for (const g of activeGroups) {
-      for (const t of g.transactions) {
-        if (!seenIds.has(t.id)) {
-          seenIds.add(t.id);
-          saved += t.total_saved ?? 0;
-          shortage += t.remaining ?? (t.is_installment && t.monthly_amount ? t.monthly_amount : t.amount);
-        }
-      }
-    }
+    const saved = activeGroups.reduce(
+      (sum, group) =>
+        sum + group.transactions.reduce((groupSum, transaction) => groupSum + (transaction.total_saved ?? 0), 0),
+      0
+    );
+    const shortage = activeGroups.reduce(
+      (sum, group) =>
+        sum + group.transactions.reduce(
+          (groupSum, transaction) => groupSum + getTransactionRemainingAmount(transaction),
+          0
+        ),
+      0
+    );
+
     return { activeSpending: spending, activeSaved: saved, activeShortage: shortage };
   }, [activeGroups]);
 
