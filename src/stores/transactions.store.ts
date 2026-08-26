@@ -61,7 +61,8 @@ const TRANSACTION_SELECT = `
   *,
   credit_card:credit_cards(name, bank, color, last_four_digits),
   savings(id, amount, notes, saved_date, created_at),
-  installment_payments(id, period_key, created_at)
+  installment_payments(id, period_key, created_at),
+  recurring_occurrence_exclusions(id, period_key, created_at)
 `;
 
 interface TransactionsState {
@@ -71,6 +72,7 @@ interface TransactionsState {
   fetchTransactions: () => Promise<void>;
   addTransaction: (input: AddTransactionInput) => Promise<Transaction>;
   deleteTransaction: (id: string) => Promise<void>;
+  deleteRecurringOccurrence: (transactionId: string, periodKey: string) => Promise<void>;
   addSavingsToTransactions: (savings: Saving[]) => void;
   removeSavingFromTransaction: (savingId: string, transactionId: string) => void;
   removeSavingsFromTransactions: (
@@ -136,6 +138,50 @@ export const useTransactionsStore = create<TransactionsState>((set, get) => ({
     set((state) => ({
       transactions: state.transactions.filter((t) => t.id !== id),
     }));
+  },
+
+  deleteRecurringOccurrence: async (transactionId, periodKey) => {
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error("Not authenticated");
+
+    const previousTransaction = get().transactions.find(
+      (transaction) => transaction.id === transactionId
+    );
+
+    set((state) => ({
+      transactions: state.transactions.map((transaction) =>
+        transaction.id === transactionId
+          ? {
+              ...transaction,
+              recurring_occurrence_exclusions: [
+                ...(transaction.recurring_occurrence_exclusions ?? []),
+                {
+                  id: `local-${transactionId}-${periodKey}`,
+                  transaction_id: transactionId,
+                  user_id: user.id,
+                  period_key: periodKey,
+                  created_at: new Date().toISOString(),
+                },
+              ],
+            }
+          : transaction
+      ),
+    }));
+
+    const { error } = await supabase
+      .from("recurring_occurrence_exclusions")
+      .insert({ transaction_id: transactionId, user_id: user.id, period_key: periodKey });
+
+    if (error) {
+      if (previousTransaction) {
+        set((state) => ({
+          transactions: state.transactions.map((transaction) =>
+            transaction.id === transactionId ? previousTransaction : transaction
+          ),
+        }));
+      }
+      throw error;
+    }
   },
 
   addSavingsToTransactions: (savings) => {

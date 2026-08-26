@@ -120,6 +120,7 @@ export default function TransactionsScreen() {
     loading,
     addTransaction,
     deleteTransaction,
+    deleteRecurringOccurrence,
     togglePaid,
     toggleInstallmentPeriodPaid,
     markGroupPaid,
@@ -163,6 +164,16 @@ export default function TransactionsScreen() {
       billingDate: Date,
       periodKey: string
     ) => {
+      const isRecurring = txn.is_installment || txn.is_subscription;
+      if (
+        isRecurring &&
+        txn.recurring_occurrence_exclusions?.some(
+          (exclusion) => exclusion.period_key === periodKey
+        )
+      ) {
+        return;
+      }
+
       const groupKey = `${card.id}-${periodKey}`;
       if (!groupMap.has(groupKey)) {
         const billMs = billingDate.getTime();
@@ -182,13 +193,16 @@ export default function TransactionsScreen() {
       const statementDay =
         card.statement_date ??
         Math.max(1, Math.min(28, card.billing_cycle_date - 5));
-      const groupTransaction = txn.is_installment || txn.is_subscription
-        ? getRecurringTransactionForPeriod(
-            txn,
-            statementDay,
-            card.billing_cycle_date,
-            periodKey
-          )
+      const groupTransaction = isRecurring
+        ? {
+            ...getRecurringTransactionForPeriod(
+              txn,
+              statementDay,
+              card.billing_cycle_date,
+              periodKey
+            ),
+            recurring_period_key: periodKey,
+          }
         : txn;
 
       groupMap.get(groupKey)!.transactions.push(groupTransaction);
@@ -411,9 +425,20 @@ export default function TransactionsScreen() {
     if (!deleteTarget) return;
     try {
       setDeleting(true);
-      await deleteTransaction(deleteTarget.id);
+      if (
+        (deleteTarget.is_installment || deleteTarget.is_subscription) &&
+        deleteTarget.recurring_period_key
+      ) {
+        await deleteRecurringOccurrence(
+          deleteTarget.id,
+          deleteTarget.recurring_period_key
+        );
+      } else {
+        await deleteTransaction(deleteTarget.id);
+      }
       setDeleteTarget(null);
     } catch {
+      Alert.alert("Delete failed", "Failed to delete this transaction. Please try again.");
     } finally {
       setDeleting(false);
     }
@@ -668,7 +693,11 @@ export default function TransactionsScreen() {
       <ConfirmModal
         visible={deleteTarget !== null}
         title="Delete Transaction"
-        message={`Delete "${deleteTarget?.description}"? All savings recorded for this transaction will also be deleted.`}
+        message={
+          deleteTarget?.is_installment || deleteTarget?.is_subscription
+            ? `Delete "${deleteTarget?.description}" from this statement only? Future occurrences will not be affected.`
+            : `Delete "${deleteTarget?.description}"? All savings recorded for this transaction will also be deleted.`
+        }
         confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

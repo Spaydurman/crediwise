@@ -42,6 +42,9 @@ export interface Transaction {
   credit_card?: Pick<CreditCard, "name" | "bank" | "color" | "last_four_digits">;
   savings?: Saving[];
   installment_payments?: InstallmentPayment[];
+  recurring_occurrence_exclusions?: RecurringOccurrenceExclusion[];
+  /** The statement period represented by a generated recurring occurrence. */
+  recurring_period_key?: string;
   total_saved?: number;
   remaining?: number;
   is_fully_saved?: boolean;
@@ -49,6 +52,14 @@ export interface Transaction {
 }
 
 export interface InstallmentPayment {
+  id: string;
+  transaction_id: string;
+  user_id: string;
+  period_key: string;
+  created_at: string;
+}
+
+export interface RecurringOccurrenceExclusion {
   id: string;
   transaction_id: string;
   user_id: string;
