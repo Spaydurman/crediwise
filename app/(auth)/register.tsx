@@ -69,13 +69,15 @@ export default function RegisterScreen() {
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <ScrollView
           className="flex-1"
-          contentContainerClassName="px-6 py-8"
+          contentContainerClassName="grow px-6 py-8"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View className="gap-8">
             <View className="gap-2">

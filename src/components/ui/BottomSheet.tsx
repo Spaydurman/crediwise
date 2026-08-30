@@ -5,7 +5,6 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -88,15 +87,18 @@ export function BottomSheet({
         </Animated.View>
 
         <KeyboardAvoidingView
-          className="flex-1 justify-end"
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          style={{ paddingTop: SCREEN_HEIGHT - sheetMaxHeight }}
+          behavior="height"
           keyboardVerticalOffset={0}
+          enabled
         >
           <Animated.View
             className="bg-white dark:bg-slate-900 rounded-t-3xl overflow-hidden border-t border-slate-200 dark:border-slate-800"
             style={{
               transform: [{ translateY: slideAnim }],
-              maxHeight: sheetMaxHeight,
+              flex: 1,
+              flexShrink: 1,
             }}
           >
             <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">

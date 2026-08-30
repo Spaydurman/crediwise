@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   Switch,
@@ -153,6 +154,8 @@ export function AddTransactionSheet({
     >
       <ScrollView
         className="px-5 py-4"
+        automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

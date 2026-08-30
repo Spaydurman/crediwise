@@ -55,13 +55,15 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <ScrollView
           className="flex-1"
-          contentContainerClassName="flex-1 px-6 justify-center"
+          contentContainerClassName="grow px-6 py-6 justify-center"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View className="gap-8">
             <View className="items-center gap-3">
