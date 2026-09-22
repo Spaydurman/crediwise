@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "crediwise",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#020617"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.crediwise.app",
@@ -69,7 +64,16 @@
           "photosPermission": "CrediWise needs photo library access to scan receipts.",
           "cameraPermission": "CrediWise needs camera access to scan receipts."
         }
-      ]
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#020617"
+        }
+      ],
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

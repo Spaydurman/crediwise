@@ -9,7 +9,9 @@ import {
   View,
 } from "react-native";
 import { CARD_COLORS } from "../../constants";
+import { getPhilippineBank } from "../../constants/philippineBanks";
 import type { AddCardInput, CardColor, CreditCard } from "../../types";
+import { BankSelect } from "./BankSelect";
 import { BottomSheet } from "../ui/BottomSheet";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -21,7 +23,6 @@ interface AddCardSheetProps {
 }
 
 interface CardFormValues {
-  name: string;
   bank: string;
   last_four_digits: string;
   credit_limit: string;
@@ -40,7 +41,6 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
     formState: { errors },
   } = useForm<CardFormValues>({
     defaultValues: {
-      name: "",
       bank: "",
       last_four_digits: "",
       credit_limit: "",
@@ -51,11 +51,14 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
   });
 
   const onSubmit = async (values: CardFormValues) => {
+    const selectedBank = getPhilippineBank(values.bank);
+    if (!selectedBank) return;
+
     try {
       setSubmitting(true);
       await onAdd({
-        name: values.name.trim(),
-        bank: values.bank.trim(),
+        name: selectedBank.name,
+        bank: selectedBank.name,
         last_four_digits: values.last_four_digits.trim() || null,
         credit_limit: parseFloat(values.credit_limit) || 0,
         statement_date: values.statement_date.trim() ? parseInt(values.statement_date, 10) : null,
@@ -82,29 +85,17 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
           <Controller
             control={control}
             name="bank"
-            rules={{ required: "Bank name is required" }}
+            rules={{
+              required: "Please select a bank",
+              validate: (value) =>
+                Boolean(getPhilippineBank(value)) ||
+                "Choose a bank from the search results",
+            }}
             render={({ field: { onChange, value } }) => (
-              <Input
-                label="Bank"
-                placeholder="e.g. BDO, BPI, Metrobank"
+              <BankSelect
                 value={value}
-                onChangeText={onChange}
+                onChange={onChange}
                 error={errors.bank?.message}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="name"
-            rules={{ required: "Card name is required" }}
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Card Name / Label"
-                placeholder="e.g. BDO Platinum, BPI Gold"
-                value={value}
-                onChangeText={onChange}
-                error={errors.name?.message}
               />
             )}
           />

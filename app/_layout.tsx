@@ -29,10 +29,7 @@ export default function RootLayout() {
       <GestureHandlerRootView
         className={`flex-1 ${themeMode === "dark" ? "bg-slate-950" : "bg-slate-50"}`}
       >
-        <StatusBar
-          style={themeColors.statusBarStyle}
-          backgroundColor={themeColors.statusBarBackground}
-        />
+        <StatusBar style={themeColors.statusBarStyle} />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={themeColors.activityIndicator} />
         </View>
@@ -44,10 +41,7 @@ export default function RootLayout() {
     <GestureHandlerRootView
       className={`flex-1 ${themeMode === "dark" ? "bg-slate-950" : "bg-slate-50"}`}
     >
-      <StatusBar
-        style={themeColors.statusBarStyle}
-        backgroundColor={themeColors.statusBarBackground}
-      />
+      <StatusBar style={themeColors.statusBarStyle} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
