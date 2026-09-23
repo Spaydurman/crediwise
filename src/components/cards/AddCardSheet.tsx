@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
@@ -9,9 +9,11 @@ import {
   View,
 } from "react-native";
 import { CARD_COLORS } from "../../constants";
+import { getCardProduct } from "../../constants/cardProducts";
 import { getPhilippineBank } from "../../constants/philippineBanks";
 import type { AddCardInput, CardColor, CreditCard } from "../../types";
 import { BankSelect } from "./BankSelect";
+import { CardProductSelect } from "./CardProductSelect";
 import { BottomSheet } from "../ui/BottomSheet";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -24,6 +26,7 @@ interface AddCardSheetProps {
 
 interface CardFormValues {
   bank: string;
+  name: string;
   last_four_digits: string;
   credit_limit: string;
   statement_date: string;
@@ -38,10 +41,12 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CardFormValues>({
     defaultValues: {
       bank: "",
+      name: "",
       last_four_digits: "",
       credit_limit: "",
       statement_date: "",
@@ -49,6 +54,9 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
       color: "indigo",
     },
   });
+  const bank = useWatch({ control, name: "bank" });
+  const name = useWatch({ control, name: "name" });
+  const hasProductDesign = Boolean(getCardProduct(getPhilippineBank(bank)?.id, name));
 
   const onSubmit = async (values: CardFormValues) => {
     const selectedBank = getPhilippineBank(values.bank);
@@ -57,7 +65,7 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
     try {
       setSubmitting(true);
       await onAdd({
-        name: selectedBank.name,
+        name: values.name.trim(),
         bank: selectedBank.name,
         last_four_digits: values.last_four_digits.trim() || null,
         credit_limit: parseFloat(values.credit_limit) || 0,
@@ -94,8 +102,26 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
             render={({ field: { onChange, value } }) => (
               <BankSelect
                 value={value}
-                onChange={onChange}
+                onChange={(next) => {
+                  if (next !== value) setValue("name", "");
+                  onChange(next);
+                }}
                 error={errors.bank?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="name"
+            rules={{ required: "Please select or enter your card" }}
+            render={({ field: { onChange, value } }) => (
+              <CardProductSelect
+                key={getPhilippineBank(bank)?.id ?? "none"}
+                bank={bank}
+                value={value}
+                onChange={onChange}
+                error={errors.name?.message}
               />
             )}
           />
@@ -182,7 +208,7 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
             )}
           />
 
-          <View className="gap-2">
+          {!hasProductDesign && <View className="gap-2">
             <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium">
               Card Color
             </Text>
@@ -209,7 +235,7 @@ export function AddCardSheet({ visible, onClose, onAdd }: AddCardSheetProps) {
                 </View>
               )}
             />
-          </View>
+          </View>}
 
           <View className="pt-2">
             <Button

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   Alert,
   Pressable,
@@ -12,6 +12,10 @@ import type { AddCardInput, CardColor, CreditCard } from "../../types";
 import { BottomSheet } from "../ui/BottomSheet";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { BankSelect } from "./BankSelect";
+import { CardProductSelect } from "./CardProductSelect";
+import { getPhilippineBank } from "../../constants/philippineBanks";
+import { getCardProduct } from "../../constants/cardProducts";
 
 interface EditCardSheetProps {
   card: CreditCard | null;
@@ -42,8 +46,12 @@ export function EditCardSheet({
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CardFormValues>();
+  const bank = useWatch({ control, name: "bank" });
+  const name = useWatch({ control, name: "name" });
+  const hasProductDesign = Boolean(getCardProduct(getPhilippineBank(bank ?? "")?.id, name));
 
   useEffect(() => {
     if (card) {
@@ -92,13 +100,13 @@ export function EditCardSheet({
             control={control}
             name="bank"
             rules={{ required: "Bank name is required" }}
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Bank"
-                value={value}
-                onChangeText={onChange}
-                error={errors.bank?.message}
-              />
+            render={({ field: { onChange, value } }) => getPhilippineBank(card?.bank ?? "") ? (
+              <BankSelect value={value} onChange={(next) => {
+                if (next !== value) setValue("name", "");
+                onChange(next);
+              }} error={errors.bank?.message} />
+            ) : (
+              <Input label="Bank" value={value} onChangeText={onChange} error={errors.bank?.message} />
             )}
           />
 
@@ -106,13 +114,10 @@ export function EditCardSheet({
             control={control}
             name="name"
             rules={{ required: "Card name is required" }}
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Card Name / Label"
-                value={value}
-                onChangeText={onChange}
-                error={errors.name?.message}
-              />
+            render={({ field: { onChange, value } }) => getPhilippineBank(bank ?? "") ? (
+              <CardProductSelect key={getPhilippineBank(bank)?.id} bank={bank} value={value} onChange={onChange} error={errors.name?.message} />
+            ) : (
+              <Input label="Card Name / Label" value={value} onChangeText={onChange} error={errors.name?.message} />
             )}
           />
 
@@ -184,7 +189,7 @@ export function EditCardSheet({
             )}
           />
 
-          <View className="gap-2">
+          {!hasProductDesign && <View className="gap-2">
             <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium">Card Color</Text>
             <Controller
               control={control}
@@ -209,7 +214,7 @@ export function EditCardSheet({
                 </View>
               )}
             />
-          </View>
+          </View>}
 
           <View className="pt-2">
             <Button

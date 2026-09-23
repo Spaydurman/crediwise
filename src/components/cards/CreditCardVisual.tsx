@@ -1,5 +1,7 @@
 import { Text, View } from "react-native";
 import { CARD_COLOR_BG_MAP, CURRENCY } from "../../constants";
+import { getCardProduct } from "../../constants/cardProducts";
+import { getPhilippineBank } from "../../constants/philippineBanks";
 import { useThemeStore } from "../../stores/theme.store";
 import type { CreditCard } from "../../types";
 
@@ -14,6 +16,8 @@ export function CreditCardVisual({
 }: CreditCardVisualProps) {
   const isDark = useThemeStore((state) => state.themeMode === "dark");
   const bgClass = CARD_COLOR_BG_MAP[card.color];
+  const bank = getPhilippineBank(card.bank);
+  const product = getCardProduct(bank?.id, card.name);
   const usagePercent =
     card.credit_limit > 0
       ? Math.min((totalSpending / card.credit_limit) * 100, 100)
@@ -21,8 +25,33 @@ export function CreditCardVisual({
 
   return (
     <View className={`rounded-2xl overflow-hidden ${isDark ? bgClass : "bg-white border border-slate-200"}`}>
-      <View className={`h-1.5 ${bgClass}`} />
+      {product ? (
+        <View className="h-44 px-5 py-4 justify-between overflow-hidden" style={{ backgroundColor: product.background }}>
+          <View
+            className="absolute rounded-full border-[28px] opacity-20"
+            style={{ width: 220, height: 220, right: -55, top: -60, borderColor: product.accent }}
+          />
+          <View className="absolute h-1.5 w-28 rounded-full opacity-80" style={{ backgroundColor: product.accent, left: 20, top: 0 }} />
+          <View className="flex-row justify-between items-start">
+            <View className="flex-1 pr-3">
+              <Text className="text-white/80 text-xs font-semibold uppercase tracking-widest">{bank?.shortName ?? card.bank}</Text>
+              <Text className="text-white text-lg font-bold mt-1" numberOfLines={2}>{product.name}</Text>
+            </View>
+            <Text className="text-white text-xs font-bold tracking-widest">CREDIT</Text>
+          </View>
+          <View className="flex-row justify-between items-end">
+            <View>
+              <View className="w-9 h-6 rounded-md border border-white/60 mb-3" style={{ backgroundColor: product.accent }} />
+              <Text className="text-white text-base font-mono tracking-widest">
+                {"•••• •••• •••• "}{card.last_four_digits ?? "••••"}
+              </Text>
+            </View>
+            <Text className="text-white text-sm font-bold italic">{product.network}</Text>
+          </View>
+        </View>
+      ) : <View className={`h-1.5 ${bgClass}`} />}
       <View className="p-5 gap-4">
+      {!product && <>
       <View className="flex-row items-start justify-between">
         <View className="gap-0.5">
           <Text className="text-slate-500 dark:text-white/70 text-xs font-medium uppercase tracking-widest">
@@ -41,6 +70,7 @@ export function CreditCardVisual({
           •••• •••• •••• {card.last_four_digits ?? "••••"}
         </Text>
       </View>
+      </>}
 
       <View className="gap-2">
         <View className="flex-row justify-between">

@@ -159,7 +159,7 @@ export function BankSelect({ value, onChange, error }: BankSelectProps) {
       {error && <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>}
       {!error && (
         <Text className="text-slate-500 text-xs">
-          Card name will use the selected bank.
+          Select your card after choosing a bank.
         </Text>
       )}
     </View>
