@@ -1,9 +1,11 @@
 import { Text, View } from "react-native";
 import { CARD_COLOR_BG_MAP, CURRENCY } from "../../constants";
 import { getCardProduct } from "../../constants/cardProducts";
+import { getCardImageUrl } from "../../constants/cardImages";
 import { getPhilippineBank } from "../../constants/philippineBanks";
 import { useThemeStore } from "../../stores/theme.store";
 import type { CreditCard } from "../../types";
+import { IssuerCardImage } from "./IssuerCardImage";
 
 interface CreditCardVisualProps {
   card: CreditCard;
@@ -18,6 +20,7 @@ export function CreditCardVisual({
   const bgClass = CARD_COLOR_BG_MAP[card.color];
   const bank = getPhilippineBank(card.bank);
   const product = getCardProduct(bank?.id, card.name);
+  const imageUrl = getCardImageUrl(bank?.id, product?.name);
   const usagePercent =
     card.credit_limit > 0
       ? Math.min((totalSpending / card.credit_limit) * 100, 100)
@@ -26,6 +29,7 @@ export function CreditCardVisual({
   return (
     <View className={`rounded-2xl overflow-hidden ${isDark ? bgClass : "bg-white border border-slate-200"}`}>
       {product ? (
+        <IssuerCardImage url={imageUrl} height={200} backgroundColor={product.background} fallback={
         <View className="h-44 px-5 py-4 justify-between overflow-hidden" style={{ backgroundColor: product.background }}>
           <View
             className="absolute rounded-full border-[28px] opacity-20"
@@ -49,8 +53,12 @@ export function CreditCardVisual({
             <Text className="text-white text-sm font-bold italic">{product.network}</Text>
           </View>
         </View>
+        } />
       ) : <View className={`h-1.5 ${bgClass}`} />}
       <View className="p-5 gap-4">
+      {product && card.last_four_digits && (
+        <Text className="text-slate-500 dark:text-white/70 text-xs">Card ending in {card.last_four_digits}</Text>
+      )}
       {!product && <>
       <View className="flex-row items-start justify-between">
         <View className="gap-0.5">

@@ -27,6 +27,10 @@ export const CARD_PRODUCTS: Record<string, CardProduct[]> = {
     { name: "World Mastercard", background: "#171d28", accent: "#aebed0", network: "mastercard" },
   ],
   unionbank: [
+    { name: "Rewards Platinum Mastercard", background: "#e46b15", accent: "#fff0bf", network: "mastercard" },
+    { name: "Cash Back Titanium Mastercard", background: "#1e5790", accent: "#ffb541", network: "mastercard" },
+    { name: "Miles+ World Mastercard", background: "#182b4b", accent: "#e9b75c", network: "mastercard" },
+    { name: "U Platinum Mastercard", background: "#292f65", accent: "#c1bcff", network: "mastercard" },
     { name: "Rewards Card", background: "#e46b15", accent: "#fff0bf", network: "VISA" },
     { name: "Cash Back Card", background: "#1e5790", accent: "#ffb541", network: "VISA" },
     { name: "Miles+ Visa Signature", background: "#182b4b", accent: "#e9b75c", network: "VISA" },

@@ -2,8 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { CARD_PRODUCTS, getCardProduct } from "../../constants/cardProducts";
+import { getCardImageUrl } from "../../constants/cardImages";
 import { getPhilippineBank } from "../../constants/philippineBanks";
 import { Input } from "../ui/Input";
+import { IssuerCardImage } from "./IssuerCardImage";
 
 interface CardProductSelectProps {
   bank: string;
@@ -55,14 +57,18 @@ export function CardProductSelect({ bank, value, onChange, error }: CardProductS
         </ScrollView>
       )}
       {selected && (
-        <View className="h-28 rounded-xl px-4 py-3 justify-between overflow-hidden mt-1" style={{ backgroundColor: selected.background }}>
-          <View className="absolute w-36 h-36 rounded-full border-[20px] opacity-20" style={{ right: -20, top: -45, borderColor: selected.accent }} />
-          <Text className="text-white/80 text-xs font-bold tracking-widest">{getPhilippineBank(bank)?.shortName}</Text>
-          <View className="flex-row items-end justify-between">
-            <Text className="text-white text-base font-bold flex-1 pr-3" numberOfLines={2}>{selected.name}</Text>
-            <Text className="text-white text-xs font-bold italic">{selected.network}</Text>
+        <View className="rounded-xl overflow-hidden mt-1">
+          <IssuerCardImage url={getCardImageUrl(bankId, selected.name)} height={140} backgroundColor={selected.background} fallback={
+            <View className="h-28 rounded-xl px-4 py-3 justify-between overflow-hidden" style={{ backgroundColor: selected.background }}>
+              <View className="absolute w-36 h-36 rounded-full border-[20px] opacity-20" style={{ right: -20, top: -45, borderColor: selected.accent }} />
+              <Text className="text-white/80 text-xs font-bold tracking-widest">{getPhilippineBank(bank)?.shortName}</Text>
+              <View className="flex-row items-end justify-between">
+                <Text className="text-white text-base font-bold flex-1 pr-3" numberOfLines={2}>{selected.name}</Text>
+                <Text className="text-white text-xs font-bold italic">{selected.network}</Text>
+              </View>
+            </View>
+          } />
           </View>
-        </View>
       )}
       {isCustom && <Input label="Card name" placeholder="Enter the name on your card" value={value} onChangeText={onChange} />}
       {error && <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>}
